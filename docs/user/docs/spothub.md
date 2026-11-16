@@ -16,6 +16,8 @@ SpotHub is AetherSDR's spot manager. It gathers spots from DX clusters, the Reve
 
 All spot sources run on a worker thread, and spots are forwarded to the radio in batches once a second.
 
+Hover a spot on the panadapter for its frequency, source, spotter, comment and time. Under the callsign, the tooltip also shows the distance and beam heading from your station, the same way the Callsign Card shows them, for example `1,612 mi @ 052°`. Miles or kilometres follow your computer's region setting. A leading `~` means the distance is to the center of the spotted station's country, because AetherSDR has no exact position for it yet; a QRZ lookup you have already done for that call gives the exact one. Hovering never starts a lookup. The line is left out when AetherSDR doesn't know your own position (from GPS or your own QRZ record) or can't place the spotted call.
+
 <img src="/img/screens/spothub.png" width="760" alt="SpotHub window with tabs Cluster, RBN, WSJT-X, SpotCollector, POTA, EiBi, N1MM, FreeDV and Spot List, with Cluster selected. The Connection group has Server dxc.nc7j.com, Port 7300, an empty Callsign field, Auto-Connect: OFF, Startup Commands… and Hide Unverified: OFF buttons, a Disconnected status and a Connect button. Below is an empty Cluster Console with a spot color swatch, and a command field with Send and Clear buttons." />
 
 *SpotHub, open on the Cluster tab. Each tab is one spot source.*

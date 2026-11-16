@@ -960,6 +960,12 @@ public:
         // Protocol-supplied pill color (#AARRGGBB). Honored only when
         // Override Background is off — see drawSpotMarkers().
         QString backgroundColor;
+        // Distance and short-path bearing from the operator (#6603), for the
+        // hover tooltip. < 0 = unknown (line left out); approx = the spotted
+        // station's DXCC country center, shown with a leading "~".
+        double distanceKm{-1.0};
+        double bearingDeg{-1.0};
+        bool   distanceApprox{false};
     };
     void setSpotMarkers(const QVector<SpotMarker>& markers);
 

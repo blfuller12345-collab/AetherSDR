@@ -457,6 +457,23 @@ CallsignInfo CallsignLookupService::cachedEntry(const QString& call)
     return m_cache.value(Callsigns::normalized(call));
 }
 
+CallsignInfo CallsignLookupService::offlineGeo(const QString& call)
+{
+    CallsignInfo info;
+    if (!m_hasOwnLocation)
+        return info;   // nothing to measure from: skip the lookups
+    const QString norm = Callsigns::normalized(call);
+    if (norm.isEmpty())
+        return info;
+    ensureCacheLoaded();
+    const auto it = m_cache.constFind(norm);
+    info = (it != m_cache.constEnd()) ? it.value() : prefixInfo(norm);
+    if (!info.isValid())
+        return CallsignInfo{};
+    stampGeo(info);
+    return info;
+}
+
 void CallsignLookupService::clearCache()
 {
     ensureCacheLoaded();

@@ -11,6 +11,7 @@
 #include "StatusBarMessageOverlay.h"
 #include "models/CwDecodeSettings.h"
 #include "PeripheralAuthStore.h"
+#include "core/CallsignLookupService.h"
 #include "core/backends/AutoRfGainControl.h"
 #include "core/ClientDisplaySettings.h"
 #include "core/DbmRangePlausibility.h"
@@ -4642,6 +4643,19 @@ void MainWindow::wirePanadapter(PanadapterApplet* applet)
             markers.append({spot.index, spot.callsign, spot.rxFreqMhz, spot.color, spot.mode,
                             dxccCol, spot.source, spot.spotterCallsign, spot.comment, tsMs,
                             spot.backgroundColor});
+            // Distance/bearing for the hover tooltip (#6603): cached QRZ
+            // record or cty.dat country center only, never a network lookup.
+            // Memory and EiBi markers are not stations to point a beam at.
+            if (spot.source != QLatin1String("Memory")
+                && spot.source != QLatin1String("EiBi")) {
+                const CallsignInfo geo =
+                    CallsignLookupService::instance().offlineGeo(spot.callsign);
+                if (geo.distanceKm >= 0.0 && geo.bearingDeg >= 0.0) {
+                    markers.last().distanceKm = geo.distanceKm;
+                    markers.last().bearingDeg = geo.bearingDeg;
+                    markers.last().distanceApprox = geo.distanceApprox;
+                }
+            }
         }
         swGuard->setSpotMarkers(markers);
     };
