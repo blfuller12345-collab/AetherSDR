@@ -637,9 +637,11 @@ public:
     // MQTT device status overlay (#699).  Keyed by full topic so topics
     // sharing a last path segment both show; drawn in `order` (the
     // Subscriptions-list position), not alphabetically (#7136).
+    // `color` "#rrggbb" draws that line in it; empty = the normal color.
     void setMqttDisplayValue(const QString& topic, int order,
-                             const QString& label, const QString& value) {
-        m_mqttDisplayValues[topic] = MqttDisplayEntry{order, label, value};
+                             const QString& label, const QString& value,
+                             const QString& color = QString()) {
+        m_mqttDisplayValues[topic] = MqttDisplayEntry{order, label, value, color};
         markOverlayDirty();
     }
     void clearMqttDisplay() { m_mqttDisplayValues.clear(); markOverlayDirty(); }
@@ -2173,6 +2175,7 @@ private:
         int     order{0};
         QString label;
         QString value;
+        QString color;   // "#rrggbb" or empty
     };
     QMap<QString, MqttDisplayEntry> m_mqttDisplayValues;   // key: full topic
     bool m_mqttOverlayStacked{false};
