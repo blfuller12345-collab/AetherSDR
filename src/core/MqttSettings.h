@@ -55,6 +55,9 @@ inline constexpr QLatin1String kCwTransmitTopic {"aethersdr/cw/transmit"};
 inline constexpr QLatin1String kRadioStateTopic {"aethersdr/radio/state"};
 inline constexpr QLatin1String kAx25RxTopic     {"aethersdr/ax25/rx"};
 inline constexpr QLatin1String kAx25TxTopic     {"aethersdr/ax25/tx"};
+// Beam heading from a station controller: "135" or {"heading":135,"band":"2m"}.
+// Used by Auto ESC to recall the saved phase/gain for that heading.
+inline constexpr QLatin1String kRotorHeadingTopic {"aethersdr/rotor/heading"};
 
 // Describes one internal MQTT topic for display in the settings dialog and
 // for driving the subscription/publish lists.  Topics with gateable=false

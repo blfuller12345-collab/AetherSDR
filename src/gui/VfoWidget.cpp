@@ -38,6 +38,7 @@
 #include "models/TransmitModel.h"
 #include "Theme.h"
 #include "core/AppSettings.h"
+#include "RotorHeadingFeed.h"
 #include "InteractionSettings.h"
 
 #include <QDateTime>
@@ -2000,6 +2001,10 @@ void VfoWidget::buildTabContent()
                 [this](const QPoint& pos) {
             showEscAutoMenu(m_escAutoBtn->mapToGlobal(pos));
         });
+        // Beam heading from the station controller (MQTT): recall the saved
+        // ESC setting for that heading, or tune it, when the beam stops.
+        connect(&RotorHeadingFeed::instance(), &RotorHeadingFeed::headingSettled,
+                this, &VfoWidget::onRotorHeadingSettled);
         connect(m_escPhaseSlider, &QSlider::valueChanged, this, [this](int v) {
             // Touching phase by hand during Auto ESC cancels it and keeps the
             // operator's own setting (#6589).
@@ -4094,6 +4099,28 @@ void VfoWidget::showEscAutoMenu(const QPoint& globalPos)
     for (QAction* a : {peak, null, gain})
         a->setEnabled(!m_escSweep.active());
 
+    // Heading memory (needs aethersdr/rotor/heading from a station controller).
+    auto& feed = RotorHeadingFeed::instance();
+    const QString band = m_slice ? EscHeadingMemory::bandKey(m_slice->frequency()) : QString();
+    menu.addSeparator();
+    QString headingText;
+    if (const auto h = feed.latestHeading()) {
+        headingText = QStringLiteral("Beam heading %1\u00B0 \u2014 %2 saved on %3")
+                          .arg(*h, 3, 10, QLatin1Char('0'))
+                          .arg(feed.memory().countForBand(band))
+                          .arg(band.isEmpty() ? QStringLiteral("this band") : band);
+    } else {
+        headingText = QStringLiteral("No beam heading (MQTT aethersdr/rotor/heading)");
+    }
+    auto* info = menu.addAction(headingText);
+    info->setEnabled(false);
+    auto* autoNew = menu.addAction(QStringLiteral("Auto-tune when the beam stops on a new heading"));
+    autoNew->setCheckable(true);
+    autoNew->setChecked(feed.autoSweepOnNewHeading());
+    auto* forget = menu.addAction(QStringLiteral("Forget saved headings for %1")
+                                      .arg(band.isEmpty() ? QStringLiteral("this band") : band));
+    forget->setEnabled(!band.isEmpty() && feed.memory().countForBand(band) > 0);
+
     QAction* chosen = menu.exec(globalPos);
     if (chosen == peak)
         m_escAutoTarget = EscAutoSweep::Target::Peak;
@@ -4101,6 +4128,13 @@ void VfoWidget::showEscAutoMenu(const QPoint& globalPos)
         m_escAutoTarget = EscAutoSweep::Target::Null;
     else if (chosen == gain)
         m_escAutoTuneGain = gain->isChecked();
+    else if (chosen == autoNew)
+        feed.setAutoSweepOnNewHeading(autoNew->isChecked());
+    else if (chosen == forget) {
+        feed.memory().clearBand(band);
+        feed.saveMemory();
+        setEscAutoStatus(QStringLiteral("Auto ESC: saved headings for %1 cleared").arg(band));
+    }
     updateEscAutoAvailability();
 }
 
@@ -4170,13 +4204,27 @@ void VfoWidget::onEscSweepTimer()
     const double delta = m_escSweep.improvementDb();
     const QString what = m_escSweep.target() == EscAutoSweep::Target::Peak
         ? QStringLiteral("stronger") : QStringLiteral("deeper");
-    const QString status = (m_escSweep.hasBaseline() && delta > 0.05)
+    QString status = (m_escSweep.hasBaseline() && delta > 0.05)
         ? QStringLiteral("Auto ESC: %1 dB %2 (%3\u00B0, %4)")
               .arg(delta, 0, 'f', 1)
               .arg(what)
               .arg(best.phaseDeg)
               .arg(best.gainPct / 100.0, 0, 'f', 2)
         : QStringLiteral("Auto ESC: no better setting found");
+    // Keep the result for this beam heading, if the beam is at rest.
+    auto& feed = RotorHeadingFeed::instance();
+    if (m_slice && m_escSweep.target() == EscAutoSweep::Target::Peak) {
+        const QString band = EscHeadingMemory::bandKey(m_slice->frequency());
+        const auto heading = feed.stableHeading();
+        if (heading && !band.isEmpty() && feed.appliesTo(band)) {
+            feed.memory().store(band, *heading, best);
+            feed.saveMemory();
+            status += QStringLiteral(" \u2014 saved for %1\u00B0")
+                          .arg(EscHeadingMemory::bucketCenterDeg(
+                                   EscHeadingMemory::bucketFor(*heading)),
+                               3, 10, QLatin1Char('0'));
+        }
+    }
     stopEscAutoSweep(false, status);
 }
 
@@ -4198,6 +4246,43 @@ void VfoWidget::stopEscAutoSweep(bool restoreStart, const QString& status)
         m_escAutoStatusLbl->setText(status);
         m_escAutoStatusLbl->setVisible(!status.isEmpty());
     }
+}
+
+void VfoWidget::setEscAutoStatus(const QString& text)
+{
+    if (!m_escAutoStatusLbl)
+        return;
+    m_escAutoStatusLbl->setText(text);
+    m_escAutoStatusLbl->setVisible(!text.isEmpty());
+}
+
+void VfoWidget::onRotorHeadingSettled(int headingDeg)
+{
+    if (!m_slice || !m_escBtn || !m_escBtn->isChecked() || m_escSweep.active())
+        return;
+    auto& feed = RotorHeadingFeed::instance();
+    const QString band = EscHeadingMemory::bandKey(m_slice->frequency());
+    if (band.isEmpty() || !feed.appliesTo(band))
+        return;
+    const QString deg = QStringLiteral("%1\u00B0").arg(headingDeg, 3, 10, QLatin1Char('0'));
+
+    if (const auto saved = feed.memory().recall(band, headingDeg)) {
+        applyEscSweepPoint(*saved);  // not sweeping: just sets the controls
+        setEscAutoStatus(QStringLiteral("ESC recalled for %1 (%2\u00B0, %3)")
+                             .arg(deg)
+                             .arg(saved->phaseDeg)
+                             .arg(saved->gainPct / 100.0, 0, 'f', 2));
+        return;
+    }
+    // Only "strongest signal" results are kept per heading, so only that
+    // target is run on its own; a null depends on the interference, not the beam.
+    if (feed.autoSweepOnNewHeading() && m_escAutoBtn && m_escAutoBtn->isEnabled()
+        && m_escAutoTarget == EscAutoSweep::Target::Peak) {
+        m_escAutoBtn->setChecked(true);  // starts the sweep
+        if (m_escSweep.active())
+            return;
+    }
+    setEscAutoStatus(QStringLiteral("New heading %1: press A to tune and save it").arg(deg));
 }
 
 void VfoWidget::setAfGain(int pct)
