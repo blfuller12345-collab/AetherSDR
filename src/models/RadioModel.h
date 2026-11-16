@@ -263,6 +263,15 @@ public:
                                          const QStringList& tokens) const;
     void setAntennaAlias(const QString& token, const QString& alias);
     void clearAntennaAlias(const QString& token);
+    // Live antenna names (#4892): a name pushed by connected hardware, such
+    // as the antenna an Antenna Genius port currently has selected. Never
+    // persisted. When set, it is what antennaAlias(), antennaDisplayName()
+    // and antennaShortDisplayName() return for that token, ahead of the
+    // operator's saved alias. An empty name removes the token's live name.
+    // antennaAliases() and persistedAntennaAlias() still return only the
+    // saved aliases, for the editor in Radio Setup.
+    void setAntennaLiveName(const QString& token, const QString& name);
+    QString persistedAntennaAlias(const QString& token) const;
     QStringList knownAntennaTokens() const;
     // knownAntennaTokens() for an RX antenna menu. With IndependentTxAntenna
     // declared (#4954) a token only the TX side publishes is not a receive input.
@@ -2647,6 +2656,8 @@ private:
     QStringList m_antList;
     mutable QString m_antennaAliasRadioKey;
     mutable QMap<QString, QString> m_antennaAliases;
+    QMap<QString, QString> m_antennaLiveNames;   // #4892, not persisted
+    QMap<QString, QString> effectiveAntennaAliases() const;
 
     QMap<QString, PanadapterModel*> m_panadapters;  // panId → model
     QMap<QString, PanadapterModel*> m_stalePanadapters;  // previous session, kept alive for UI reuse
