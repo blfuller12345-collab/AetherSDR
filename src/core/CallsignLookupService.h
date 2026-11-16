@@ -76,6 +76,12 @@ public:
     bool hasCachedEntry(const QString& call);
     CallsignInfo cachedEntry(const QString& call);  // !isValid() when absent
 
+    // Distance and bearing to a station WITHOUT any network request (#6603):
+    // a cached QRZ record if there is one, otherwise the cty.dat country
+    // center. distanceKm/bearingDeg are < 0 when the operator's position or
+    // the station's is unknown; distanceApprox marks a country center.
+    CallsignInfo offlineGeo(const QString& call);
+
     // Async credential test for the setup tab; result via loginTestFinished.
     void testLogin(const QString& username, const QString& password);
 
