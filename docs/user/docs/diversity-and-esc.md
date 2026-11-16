@@ -94,6 +94,16 @@ Below the polar display, a level bar shows **signal strength after ESC processin
 
 The goal is usually to find the phase angle where the ESC meter shows the most improvement in SNR — maximum desired signal with minimum interference.
 
+#### Auto ESC (A)
+
+The **A** button at the end of the phase row finds a setting for you. Click it and AetherSDR sweeps the phase, then the gain, while it watches the ESC meter, and leaves the sliders at the best setting it found. The polar display and the sliders move as it works, and the line under the ESC meter shows its progress, then the result, for example *Auto ESC: 6.2 dB stronger (135°, 0.85)*.
+
+- **Right-click A** to choose what to look for: **Strongest signal** (the default) or **Deepest null**, and whether to **Also sweep gain** (on by default). Turn it off to sweep phase only, which is quicker.
+- A full sweep takes about half a minute; phase only takes about 20 seconds. Keep the signal you care about steady while it runs: a station that stops transmitting partway through throws the result off.
+- **Click A again** to cancel and put phase and gain back where they were. **Moving the phase or gain slider, or clicking the polar display**, cancels it and keeps your own setting.
+- If nothing beats the starting setting, the sliders stay where they were.
+- **A** is dimmed until **ESC** is on.
+
 ### Finding the Best Null
 
 1. Enable DIV and ESC
