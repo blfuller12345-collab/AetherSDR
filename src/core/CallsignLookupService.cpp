@@ -4,6 +4,9 @@
 #include "CtyDatParser.h"
 #include "LogManager.h"
 #include "MaidenheadLocator.h"
+#include "SpotPositionRegistry.h"
+
+#include <QDateTime>
 #include "QrzClient.h"
 #include "QrzLookupSettings.h"
 
@@ -465,6 +468,17 @@ CallsignInfo CallsignLookupService::offlineGeo(const QString& call)
     const QString norm = Callsigns::normalized(call);
     if (norm.isEmpty())
         return info;
+    // A position the spot itself carried (a POTA park, a cluster grid) wins:
+    // a portable operator is there, not at the address on file.
+    if (const auto spotPos = SpotPositionRegistry::instance().lookup(
+            call, QDateTime::currentMSecsSinceEpoch())) {
+        info.call = norm;
+        info.latitude = spotPos->lat;
+        info.longitude = spotPos->lon;
+        info.hasLatLon = true;
+        stampGeo(info);
+        return info;
+    }
     ensureCacheLoaded();
     const auto it = m_cache.constFind(norm);
     info = (it != m_cache.constEnd()) ? it.value() : prefixInfo(norm);

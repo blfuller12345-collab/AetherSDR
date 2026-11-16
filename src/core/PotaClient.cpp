@@ -1,4 +1,7 @@
 #include "PotaClient.h"
+#include "SpotPositionRegistry.h"
+
+#include <cmath>
 #include "LogManager.h"
 #include "AppSettings.h"
 
@@ -151,6 +154,26 @@ void PotaClient::onPollTimer()
 
             if (spot.freqMhz <= 0.0 || spot.dxCall.isEmpty())
                 continue;
+
+            // The park's position, for distance/heading on the panadapter:
+            // the activator is at the park, not at their home QTH (#6603).
+            {
+                const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+                const QJsonValue latV = obj.value("latitude");
+                const QJsonValue lonV = obj.value("longitude");
+                const double lat = latV.isString() ? latV.toString().toDouble() : latV.toDouble(qQNaN());
+                const double lon = lonV.isString() ? lonV.toString().toDouble() : lonV.toDouble(qQNaN());
+                if (std::isfinite(lat) && std::isfinite(lon) && !(lat == 0.0 && lon == 0.0)) {
+                    SpotPositionRegistry::instance().rememberLatLon(
+                        spot.dxCall, lat, lon, SpotPositionRegistry::Source::Park, nowMs);
+                } else {
+                    QString grid = obj.value("grid6").toString();
+                    if (grid.size() < 4)
+                        grid = obj.value("grid4").toString();
+                    SpotPositionRegistry::instance().rememberGrid(
+                        spot.dxCall, grid, SpotPositionRegistry::Source::Park, nowMs);
+                }
+            }
 
             // Log
             QString logLine = QString("%1  %2  %3 kHz  %4  %5")
