@@ -7275,6 +7275,15 @@ target_include_directories(mqtt_settings_test PRIVATE src)
 target_link_libraries(mqtt_settings_test PRIVATE Qt6::Core)
 add_test(NAME mqtt_settings_test COMMAND mqtt_settings_test)
 
+# aethersdr/spot/selected MQTT payload: fields keyed by presence.
+add_executable(mqtt_spot_selected_test
+    tests/mqtt_spot_selected_test.cpp
+    src/core/MqttSpotSelected.cpp
+)
+target_include_directories(mqtt_spot_selected_test PRIVATE src)
+target_link_libraries(mqtt_spot_selected_test PRIVATE Qt6::Core)
+add_test(NAME mqtt_spot_selected_test COMMAND mqtt_spot_selected_test)
+
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
 # to computeCenters() can't silently regress the per-band point counts.

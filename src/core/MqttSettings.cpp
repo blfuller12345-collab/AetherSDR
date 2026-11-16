@@ -300,6 +300,7 @@ const QVector<InternalMqttTopicDef>& internalMqttPublishTopicDefs()
         { QString(kCwDecodeTopic),    QStringLiteral("CW decoded text"),             true, true },
         { QString(kRadioStateTopic),  QStringLiteral("Radio VFO / mode / TX state / RF drive"), true },
         { QString(kAx25RxTopic),      QStringLiteral("AX.25 received frames"),       true },
+        { QString(kSpotSelectedTopic), QStringLiteral("Spot clicked on the panadapter (call, frequency, beam heading)"), true },
     };
     return defs;
 }

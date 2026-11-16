@@ -19,6 +19,7 @@
 #include "MqttApplet.h"
 #include "core/MqttAntennaAlias.h"
 #include "core/MqttSettings.h"
+#include "core/MqttSpotSelected.h"
 #endif
 #include "core/AppSettings.h"
 #include "WsjtxOverlayConfig.h"
@@ -936,5 +937,16 @@ void MainWindow::rebuildWsjtxMarkers()
         applet->spectrumWidget()->setWsjtxMarkers(markers);
     }
 }
+
+#ifdef HAVE_MQTT
+void MainWindow::publishSpotSelectedMqtt(const MqttSpotSelectedInputs& spot)
+{
+    if (!m_mqttClient) return;
+    if (!isMqttTopicEnabled(QString::fromLatin1(kSpotSelectedTopic))) return;
+    m_mqttClient->publish(QString::fromLatin1(kSpotSelectedTopic),
+                          QJsonDocument(buildMqttSpotSelectedPayload(spot))
+                              .toJson(QJsonDocument::Compact));
+}
+#endif
 
 } // namespace AetherSDR
