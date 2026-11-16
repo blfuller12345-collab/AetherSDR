@@ -14919,15 +14919,44 @@ void SpectrumWidget::renderGpuFrame(QRhiCommandBuffer* cb,
                     p.setFont(mqttFont);
                     p.setPen(AetherSDR::theme::withAlpha("color.accent.bright", 200));
                     const QFontMetrics fm2(mqttFont);
-                    QString mqttLabel;
+
+                    // Subscriptions-list order (#7136); label breaks ties so
+                    // the order is stable if two entries share a position.
+                    QVector<const MqttDisplayEntry*> entries;
+                    entries.reserve(m_mqttDisplayValues.size());
                     for (auto it = m_mqttDisplayValues.constBegin();
                          it != m_mqttDisplayValues.constEnd(); ++it) {
-                        if (!mqttLabel.isEmpty()) { mqttLabel += QStringLiteral("   "); }
-                        mqttLabel += it.key() + QStringLiteral(": ") + it.value();
+                        entries.append(&it.value());
                     }
-                    int mx = specRect.right() - DBM_STRIP_W - 8 - fm2.horizontalAdvance(mqttLabel);
+                    std::stable_sort(entries.begin(), entries.end(),
+                                     [](const MqttDisplayEntry* a,
+                                        const MqttDisplayEntry* b) {
+                        if (a->order != b->order) return a->order < b->order;
+                        return a->label < b->label;
+                    });
+
+                    const int mqttRight = specRect.right() - DBM_STRIP_W - 8;
                     int my = specRect.top() + fm2.ascent() + 22;
-                    p.drawText(mx, my, mqttLabel);
+                    if (m_mqttOverlayStacked) {
+                        // One line per entry; entries with no value yet are
+                        // skipped.  Stop at the bottom of the spectrum so a
+                        // long list on a short pan never spills over.
+                        const int lastBaseline = specRect.bottom() - fm2.descent();
+                        for (const MqttDisplayEntry* e : entries) {
+                            if (e->value.isEmpty()) continue;
+                            if (my > lastBaseline) break;
+                            const QString line = e->label + QStringLiteral(": ") + e->value;
+                            p.drawText(mqttRight - fm2.horizontalAdvance(line), my, line);
+                            my += fm2.lineSpacing();
+                        }
+                    } else {
+                        QString mqttLabel;
+                        for (const MqttDisplayEntry* e : entries) {
+                            if (!mqttLabel.isEmpty()) { mqttLabel += QStringLiteral("   "); }
+                            mqttLabel += e->label + QStringLiteral(": ") + e->value;
+                        }
+                        p.drawText(mqttRight - fm2.horizontalAdvance(mqttLabel), my, mqttLabel);
+                    }
                 }
             }
 

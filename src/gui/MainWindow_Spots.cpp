@@ -237,9 +237,12 @@ void MainWindow::wireSpotSubsystem()
 
     // MQTT → panadapter overlay display
     connect(m_appletPanel->mqttApplet(), &MqttApplet::displayValueChanged,
-            this, [this](const QString& key, const QString& value) {
+            this, [this](const QString& topic, int order,
+                         const QString& label, const QString& value) {
         if (auto* sw = m_panStack->activeSpectrum()) {
-            sw->setMqttDisplayValue(key, value);
+            sw->setMqttOverlayStacked(m_appletPanel->mqttApplet()->overlayLayout()
+                                      == MqttOverlayLayout::Stacked);
+            sw->setMqttDisplayValue(topic, order, label, value);
         }
     });
     connect(m_appletPanel->mqttApplet(), &MqttApplet::displayCleared,
