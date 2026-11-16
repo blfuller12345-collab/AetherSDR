@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 291 touchpoint headers (236 core, 55 models) — 291/291 tagged, 0/291 converted.
+**Totals:** 292 touchpoint headers (237 core, 55 models) — 292/292 tagged, 0/292 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -105,6 +105,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/MiniPanSettings.h` | 1 | ui-support — Client-side persistence for the mini-pan applet span; UI configuration, not radio-owned state or a daemon protocol resource. | unconverted |
 | `core/MqttAntennaAlias.h` | 3 | ui-support — MQTT topic parsing/queue for antenna-alias pushes from a broker; external integration plumbing, not radio state | unconverted |
 | `core/MqttClient.h` | 3 | ui-support — Generic libmosquitto MQTT pub/sub wrapper for external integrations; no radio state, needs a home not a protocol msg | unconverted |
+| `core/MqttDisplayPayload.h` | 1 | ui-support — Parses a display-on-pan MQTT payload into overlay text and an optional publisher-chosen line color; app plumbing for the panadapter overlay, no radio state. | unconverted |
 | `core/MqttRadioState.h` | 1 | ui-support — Pure payload builder for the MQTT aethersdr/radio/state topic; external integration plumbing, not radio state | unconverted |
 | `core/MqttSettings.h` | 6 | ui-support — Settings store for the MQTT broker bridge (conn config, topics, buttons, keychain); external integration plumbing | unconverted |
 | `core/MqttSpotSelected.h` | 2 | ui-support — Payload builder for the aethersdr/spot/selected MQTT topic (a clicked panadapter spot, with its beam heading when known), for station controllers; pure, like core/MqttRadioState.h. External integration plumbing. | unconverted |

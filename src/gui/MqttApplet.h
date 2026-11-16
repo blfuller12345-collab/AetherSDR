@@ -38,9 +38,12 @@ signals:
     // full topic and is the overlay's key, so two topics that share a last
     // path segment no longer overwrite each other (#7136).  `order` is the
     // subscription's position in Settings -> MQTT -> Subscriptions, and
-    // `label` is what the overlay draws in front of the value.
+    // `label` is what the overlay draws in front of the value. `color` is
+    // "#rrggbb" when the payload asked for one (core/MqttDisplayPayload.h),
+    // else empty.
     void displayValueChanged(const QString& topic, int order,
-                             const QString& label, const QString& value);
+                             const QString& label, const QString& value,
+                             const QString& color);
     void displayCleared();
     void antennaAliasRequested(const QString& token, const QString& alias);
     void settingsRequested();

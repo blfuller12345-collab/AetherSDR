@@ -1,4 +1,5 @@
 #include "MqttApplet.h"
+#include "core/MqttDisplayPayload.h"
 
 #include "core/AppSettings.h"
 #include "core/LogManager.h"
@@ -232,7 +233,9 @@ void MqttApplet::onMessageReceived(const QString& topic, const QByteArray& paylo
     for (int i = 0; i < m_topicDefs.size(); ++i) {
         const MqttTopicDef& td = m_topicDefs.at(i);
         if (td.displayOnPan && td.topic == topic) {
-            emit displayValueChanged(topic, i, mqttTopicDisplayLabel(td), value);
+            const MqttDisplayPayload shown = parseMqttDisplayPayload(payload);
+            emit displayValueChanged(topic, i, mqttTopicDisplayLabel(td),
+                                     shown.text, shown.color);
             break;
         }
     }
