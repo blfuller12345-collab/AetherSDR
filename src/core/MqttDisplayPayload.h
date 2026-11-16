@@ -12,9 +12,13 @@ namespace AetherSDR {
 //   {"text":"COAX OPEN - HF","color":"#ff3030"}
 // Named colors: green, red, yellow, orange, blue, white, grey/gray. Anything
 // else, or no color, uses the overlay's normal color.
+// A "label" field replaces the label set in Settings for this line; an empty
+// "label" shows the text alone:  {"label":"","text":"Coax Closed"}
 struct MqttDisplayPayload {
-    QString text;   // at most maxChars characters
-    QString color;  // "#rrggbb", or empty for the default
+    QString text;       // at most maxChars characters
+    QString color;      // "#rrggbb", or empty for the default
+    bool hasLabel{false};
+    QString label;      // used when hasLabel; empty = no label
 };
 
 MqttDisplayPayload parseMqttDisplayPayload(const QByteArray& payload, int maxChars = 80);

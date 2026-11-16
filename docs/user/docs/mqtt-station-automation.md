@@ -66,7 +66,7 @@ The label is the last part of the topic (`status` for `lps/hf/status`) unless yo
 - **Single line** (default): all values side by side on one line.
 - **Stacked**: one value per line, top to bottom. A topic with no value yet takes no line.
 
-**Colors.** A publisher can choose the color of its own line by sending JSON with a `text` field and a `color`, for example `{"text":"Coax closed","color":"green"}` or `{"text":"COAX OPEN","color":"red"}`. The colors are `green`, `red`, `yellow`, `orange`, `blue`, `white` and `grey`, or a hex value such as `#ff8800`. A plain-text payload, or JSON without `text`, is shown as it is in the normal color. This lets a station controller show a line green when all is well and red when it is not.
+**Colors.** A publisher can choose the color of its own line by sending JSON with a `text` field and a `color`, for example `{"text":"Coax closed","color":"green"}` or `{"text":"COAX OPEN","color":"red"}`. The colors are `green`, `red`, `yellow`, `orange`, `blue`, `white` and `grey`, or a hex value such as `#ff8800`. A `label` field replaces the label for that line, and an empty one shows the text alone: `{"label":"","text":"Coax Closed","color":"green"}` draws just **Coax Closed** in green. A plain-text payload, or JSON without `text`, is shown as it is in the normal color. This lets a station controller show a line green when all is well and red when it is not.
 
 After you change labels, order or layout, each value reappears in its new form when its topic next sends a message.
 

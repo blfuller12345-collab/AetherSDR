@@ -23,6 +23,13 @@ int main()
     auto green = parseMqttDisplayPayload(R"({"text":"Coax closed","color":"green"})");
     ok &= expect(green.text == "Coax closed" && green.color == "#22c55e", "named color");
 
+    ok &= expect(!green.hasLabel, "no label field keeps the Settings label");
+    auto noLabel = parseMqttDisplayPayload(R"({"label":"","text":"Coax Closed","color":"green"})");
+    ok &= expect(noLabel.hasLabel && noLabel.label.isEmpty() && noLabel.text == "Coax Closed",
+                 "empty label shows the text alone");
+    auto named = parseMqttDisplayPayload(R"({"label":"Transverter Band","text":"144 LP"})");
+    ok &= expect(named.hasLabel && named.label == "Transverter Band", "label replaces the Settings label");
+
     auto hex = parseMqttDisplayPayload(R"({"text":"OPEN","color":"#F00"})");
     ok &= expect(hex.color == "#ff0000", "short hex expands, case folded");
 

@@ -14954,7 +14954,8 @@ void SpectrumWidget::renderGpuFrame(QRhiCommandBuffer* cb,
                         for (const MqttDisplayEntry* e : entries) {
                             if (e->value.isEmpty()) continue;
                             if (my > lastBaseline) break;
-                            const QString line = e->label + QStringLiteral(": ") + e->value;
+                            const QString line = e->label.isEmpty()
+                                ? e->value : e->label + QStringLiteral(": ") + e->value;
                             p.setPen(penFor(e));
                             p.drawText(mqttRight - fm2.horizontalAdvance(line), my, line);
                             my += fm2.lineSpacing();
@@ -14965,7 +14966,8 @@ void SpectrumWidget::renderGpuFrame(QRhiCommandBuffer* cb,
                         QStringList pieces;
                         int total = 0;
                         for (const MqttDisplayEntry* e : entries) {
-                            pieces.append(e->label + QStringLiteral(": ") + e->value);
+                            pieces.append(e->label.isEmpty()
+                                ? e->value : e->label + QStringLiteral(": ") + e->value);
                             total += fm2.horizontalAdvance(pieces.last());
                         }
                         total += fm2.horizontalAdvance(gap) * std::max<qsizetype>(0, pieces.size() - 1);
