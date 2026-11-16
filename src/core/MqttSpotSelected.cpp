@@ -27,6 +27,8 @@ QJsonObject buildMqttSpotSelectedPayload(const MqttSpotSelectedInputs& in)
             static_cast<int>(std::lround(in.bearingDeg)) % 360;
         if (std::isfinite(in.distanceKm) && in.distanceKm >= 0.0) {
             obj[QStringLiteral("distance_km")] = static_cast<int>(std::lround(in.distanceKm));
+            obj[QStringLiteral("distance_mi")] =
+                static_cast<int>(std::lround(in.distanceKm * 0.621371));
         }
         obj[QStringLiteral("approx")] = in.approx;
     }

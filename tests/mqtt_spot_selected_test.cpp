@@ -44,6 +44,7 @@ int main()
                  "time in UTC ISO-8601");
     ok &= expect(o.value(QStringLiteral("bearing")).toInt() == 52
                      && o.value(QStringLiteral("distance_km")).toInt() == 2594
+                     && o.value(QStringLiteral("distance_mi")).toInt() == 1612
                      && o.value(QStringLiteral("approx")).toBool(),
                  "bearing, distance and approx when known");
 
@@ -52,6 +53,7 @@ int main()
     bare.freqMhz = 14.025;
     const QJsonObject b = buildMqttSpotSelectedPayload(bare);
     ok &= expect(!b.contains(QStringLiteral("bearing")) && !b.contains(QStringLiteral("distance_km"))
+                     && !b.contains(QStringLiteral("distance_mi"))
                      && !b.contains(QStringLiteral("approx")),
                  "no heading fields when the heading is unknown (never 0)");
     ok &= expect(!b.contains(QStringLiteral("time")) && !b.contains(QStringLiteral("mode"))
