@@ -10144,6 +10144,9 @@ void SpectrumWidget::mousePressEvent(QMouseEvent* ev)
                         emit frequencyClicked(hr.freqMhz);
                         // Notify the radio that a spot was clicked (#341)
                         emit spotTriggered(marker.index);
+                        if (marker.source != QLatin1String("EiBi")) {
+                            emit spotSelected(marker);
+                        }
                     }
                 } else {
                     // SHistory / QRM marker — markerIndex is past the regular
@@ -17647,6 +17650,9 @@ void SpectrumWidget::showSpotClusterPopup(const SpotCluster& cluster, const QPoi
                 emit frequencyClicked(spot.freqMhz);
                 // Mirror direct-click path so the radio sees the spot click (#2680, #341)
                 emit spotTriggered(spot.index);
+                if (spot.source != QLatin1String("EiBi")) {
+                    emit spotSelected(spot);
+                }
             }
         });
     }

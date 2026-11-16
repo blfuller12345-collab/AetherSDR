@@ -1155,6 +1155,9 @@ signals:
                           const QString& comment, int lifetimeSec,
                           bool forwardToCluster);
     void spotRemoveRequested(int spotIndex);
+    // A DX/cluster/RBN/POTA/... spot was clicked (not a memory, EiBi or
+    // Signal History marker). MainWindow publishes it over MQTT.
+    void spotSelected(const AetherSDR::SpectrumWidget::SpotMarker& marker);
 
 protected:
 #ifdef AETHER_GPU_SPECTRUM

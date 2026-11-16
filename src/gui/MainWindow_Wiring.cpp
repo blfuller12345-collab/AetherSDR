@@ -12,6 +12,7 @@
 #include "models/CwDecodeSettings.h"
 #include "PeripheralAuthStore.h"
 #include "core/CallsignLookupService.h"
+#include "core/MqttSpotSelected.h"
 #include "core/backends/AutoRfGainControl.h"
 #include "core/ClientDisplaySettings.h"
 #include "core/DbmRangePlausibility.h"
@@ -4619,6 +4620,27 @@ void MainWindow::wirePanadapter(PanadapterApplet* applet)
             Qt::UniqueConnection);
     connect(sw, &SpectrumWidget::tnfPermanentRequested, tnf, &TnfModel::setTnfPermanent,
             Qt::UniqueConnection);
+
+#ifdef HAVE_MQTT
+    // A clicked spot goes out on aethersdr/spot/selected when enabled.
+    connect(sw, &SpectrumWidget::spotSelected, this,
+            [this](const SpectrumWidget::SpotMarker& m) {
+        MqttSpotSelectedInputs in;
+        in.callsign   = m.callsign;
+        in.freqMhz    = m.freqMhz;
+        in.mode       = m.mode;
+        in.source     = m.source;
+        in.spotter    = m.spotterCallsign;
+        in.comment    = m.comment;
+        in.spotTimeMs = m.timestampMs;
+        // The heading the hover tooltip shows (#6603); absent when unknown.
+        in.haveBearing = m.distanceKm >= 0.0 && m.bearingDeg >= 0.0;
+        in.bearingDeg  = m.bearingDeg;
+        in.distanceKm  = m.distanceKm;
+        in.approx      = m.distanceApprox;
+        publishSpotSelectedMqtt(in);
+    });
+#endif
 
     // ── Spot markers ─────────────────────────────────────────────────────
     auto* spots = &m_radioModel.spotModel();

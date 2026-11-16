@@ -76,6 +76,9 @@ inline constexpr QLatin1String kCwTransmitTopic {"aethersdr/cw/transmit"};
 inline constexpr QLatin1String kRadioStateTopic {"aethersdr/radio/state"};
 inline constexpr QLatin1String kAx25RxTopic     {"aethersdr/ax25/rx"};
 inline constexpr QLatin1String kAx25TxTopic     {"aethersdr/ax25/tx"};
+// Published when the operator clicks a spot on the panadapter: call,
+// frequency, mode and, when known, the beam heading. Payload: core/MqttSpotSelected.h.
+inline constexpr QLatin1String kSpotSelectedTopic {"aethersdr/spot/selected"};
 
 // Describes one internal MQTT topic for display in the settings dialog and
 // for driving the subscription/publish lists.  Topics with gateable=false
