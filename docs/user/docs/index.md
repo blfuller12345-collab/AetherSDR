@@ -103,7 +103,6 @@ Prefer paper? Download the [printable manual](pathname:///AetherSDR-Manual.pdf) 
 - [TGXL Tuner Control](./tgxl-tuner-control.md) — 4O3A Tuner Genius XL: direct or relayed, autotune, antenna switch
 - [ShackSwitch](./shackswitch.md) — Network antenna switch with dummy-load protection
 - [Green Heron Everyware](./green-heron-everyware.md) — Green Heron Everyware antenna switch and rotator control
-- [Rotators](./rotators.md) — Rotator heading and control over the network: microHAM ARCO and other GS-232A controllers, Hamlib rotctld and PstRotator
 - [USB Cable Management](./usb-cable-management.md) — CAT, BCD, Bit, LDPA and Passthrough cables on the radio's USB ports
 
 ## Controllers

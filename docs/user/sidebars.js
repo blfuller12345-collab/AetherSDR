@@ -123,7 +123,6 @@ const sidebars = {
         "kxpa100-amplifier-control",
         "shackswitch",
         "green-heron-everyware",
-        "rotators",
         "usb-cable-management"
       ]
     },
