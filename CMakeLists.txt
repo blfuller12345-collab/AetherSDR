@@ -1094,6 +1094,7 @@ set(CORE_SOURCES
     src/core/GoClusterSettings.cpp
     src/core/WsjtxClient.cpp
     src/core/PotaClient.cpp
+    src/core/SpotPositionRegistry.cpp
     src/core/EibiClient.cpp
     src/core/EibiCodeMaps.cpp
     src/core/N1MMSpotClient.cpp

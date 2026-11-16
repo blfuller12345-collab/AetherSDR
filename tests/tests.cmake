@@ -7180,6 +7180,16 @@ target_link_libraries(qrz_callsign_test PRIVATE Qt6::Core Qt6::Network Qt6::Test
 add_test(NAME qrz_callsign_test COMMAND qrz_callsign_test)
 
 # Distance/bearing text shared by the Callsign Card and spot tooltips (#6603).
+# Positions carried by spots (POTA park, cluster grid) for the panadapter's
+# distance/heading (#6603): park beats grid, freshness, bad input ignored.
+add_executable(spot_position_registry_test
+    tests/spot_position_registry_test.cpp
+    src/core/SpotPositionRegistry.cpp
+)
+target_include_directories(spot_position_registry_test PRIVATE src)
+target_link_libraries(spot_position_registry_test PRIVATE Qt6::Core)
+add_test(NAME spot_position_registry_test COMMAND spot_position_registry_test)
+
 add_executable(distance_bearing_text_test
     tests/distance_bearing_text_test.cpp
 )
