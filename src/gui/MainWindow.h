@@ -1128,6 +1128,10 @@ private:
     // Rebuilds the View-menu workspace switcher on every open (phase 6) —
     // a dynamic menu is never stale and needs no change bookkeeping.
     void rebuildWorkspaceSwitcherMenu(QMenu* menu);
+    // Workspace export / import (#5276) — MainWindow_Workspace.cpp.
+    void exportWorkspacesToFile(const QStringList& workspaceIds,
+                                const QString& suggestedName);
+    void importWorkspacesFromFile();
     void rebuildCanvasWindowsMenu(QMenu* menu);
 
     // Show/hide the applet panel — single source of truth that updates the
