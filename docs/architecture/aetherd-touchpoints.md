@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 289 touchpoint headers (234 core, 55 models) — 289/289 tagged, 0/289 converted.
+**Totals:** 290 touchpoint headers (235 core, 55 models) — 290/290 tagged, 0/290 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -104,6 +104,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/MiniPanSettings.h` | 1 | ui-support — Client-side persistence for the mini-pan applet span; UI configuration, not radio-owned state or a daemon protocol resource. | unconverted |
 | `core/MqttAntennaAlias.h` | 3 | ui-support — MQTT topic parsing/queue for antenna-alias pushes from a broker; external integration plumbing, not radio state | unconverted |
 | `core/MqttClient.h` | 3 | ui-support — Generic libmosquitto MQTT pub/sub wrapper for external integrations; no radio state, needs a home not a protocol msg | unconverted |
+| `core/MqttDisplayPayload.h` | 1 | ui-support — Parses a display-on-pan MQTT payload into overlay text and an optional publisher-chosen line color; app plumbing for the panadapter overlay, no radio state. | unconverted |
 | `core/MqttRadioState.h` | 1 | ui-support — Pure payload builder for the MQTT aethersdr/radio/state topic; external integration plumbing, not radio state | unconverted |
 | `core/MqttSettings.h` | 6 | ui-support — Settings store for the MQTT broker bridge (conn config, topics, buttons, keychain); external integration plumbing | unconverted |
 | `core/N1MMSpotClient.h` | 3 | universal — UDP listener for N1MMSpot XML bandmap spots from contest loggers (N1MM+, DXLog), emitting explicit add/delete events (#2906). Radio-agnostic spot ingestion — 'SmartSDR-CAT compatible' names the third-party protocol it mimics, not a dependency on the radio wire. | unconverted |

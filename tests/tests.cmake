@@ -7257,6 +7257,16 @@ if(UNIX)
 endif()
 add_test(NAME mqtt_radio_state_test COMMAND mqtt_radio_state_test)
 
+# Display-on-pan MQTT payloads: plain text, or {"text","color"} so a
+# publisher can color its own line on the panadapter overlay.
+add_executable(mqtt_display_payload_test
+    tests/mqtt_display_payload_test.cpp
+    src/core/MqttDisplayPayload.cpp
+)
+target_include_directories(mqtt_display_payload_test PRIVATE src)
+target_link_libraries(mqtt_display_payload_test PRIVATE Qt6::Core)
+add_test(NAME mqtt_display_payload_test COMMAND mqtt_display_payload_test)
+
 add_executable(mqtt_settings_test
     tests/mqtt_settings_test.cpp
     src/core/MqttSettings.cpp

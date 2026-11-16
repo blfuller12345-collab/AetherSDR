@@ -14917,7 +14917,16 @@ void SpectrumWidget::renderGpuFrame(QRhiCommandBuffer* cb,
                 if (!m_mqttDisplayValues.isEmpty()) {
                     QFont mqttFont(p.font().family(), 12, QFont::Bold);
                     p.setFont(mqttFont);
-                    p.setPen(AetherSDR::theme::withAlpha("color.accent.bright", 200));
+                    const QColor mqttDefault =
+                        AetherSDR::theme::withAlpha("color.accent.bright", 200);
+                    // A publisher-chosen color per line (core/MqttDisplayPayload.h).
+                    auto penFor = [&mqttDefault](const MqttDisplayEntry* e) {
+                        if (e->color.isEmpty()) return mqttDefault;
+                        QColor c(e->color);
+                        if (!c.isValid()) return mqttDefault;
+                        c.setAlpha(mqttDefault.alpha());
+                        return c;
+                    };
                     const QFontMetrics fm2(mqttFont);
 
                     // Subscriptions-list order (#7136); label breaks ties so
@@ -14946,16 +14955,27 @@ void SpectrumWidget::renderGpuFrame(QRhiCommandBuffer* cb,
                             if (e->value.isEmpty()) continue;
                             if (my > lastBaseline) break;
                             const QString line = e->label + QStringLiteral(": ") + e->value;
+                            p.setPen(penFor(e));
                             p.drawText(mqttRight - fm2.horizontalAdvance(line), my, line);
                             my += fm2.lineSpacing();
                         }
                     } else {
-                        QString mqttLabel;
+                        // One line, right-aligned, each piece in its own color.
+                        const QString gap = QStringLiteral("   ");
+                        QStringList pieces;
+                        int total = 0;
                         for (const MqttDisplayEntry* e : entries) {
-                            if (!mqttLabel.isEmpty()) { mqttLabel += QStringLiteral("   "); }
-                            mqttLabel += e->label + QStringLiteral(": ") + e->value;
+                            pieces.append(e->label + QStringLiteral(": ") + e->value);
+                            total += fm2.horizontalAdvance(pieces.last());
                         }
-                        p.drawText(mqttRight - fm2.horizontalAdvance(mqttLabel), my, mqttLabel);
+                        total += fm2.horizontalAdvance(gap) * std::max<qsizetype>(0, pieces.size() - 1);
+                        int x = mqttRight - total;
+                        for (qsizetype i = 0; i < pieces.size(); ++i) {
+                            if (i > 0) x += fm2.horizontalAdvance(gap);
+                            p.setPen(penFor(entries.at(i)));
+                            p.drawText(x, my, pieces.at(i));
+                            x += fm2.horizontalAdvance(pieces.at(i));
+                        }
                     }
                 }
             }

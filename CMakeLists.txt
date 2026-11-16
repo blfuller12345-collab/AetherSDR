@@ -1104,6 +1104,7 @@ set(CORE_SOURCES
     src/core/MqttAntennaAlias.cpp
     src/core/MqttRadioState.cpp
     src/core/MqttSettings.cpp
+    src/core/MqttDisplayPayload.cpp
     src/core/AutomationBridgeSettings.cpp
     src/core/SpotCommandPolicy.cpp
     src/core/SpotModeResolver.cpp

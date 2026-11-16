@@ -557,6 +557,12 @@
   "split": "",
   "confidence": "high"
  },
+ "core/MqttDisplayPayload.h": {
+  "tag": "ui-support",
+  "note": "Parses a display-on-pan MQTT payload into overlay text and an optional publisher-chosen line color; app plumbing for the panadapter overlay, no radio state.",
+  "split": "",
+  "confidence": "high"
+ },
  "core/MqttSettings.h": {
   "tag": "ui-support",
   "note": "Settings store for the MQTT broker bridge (conn config, topics, buttons, keychain); external integration plumbing",
