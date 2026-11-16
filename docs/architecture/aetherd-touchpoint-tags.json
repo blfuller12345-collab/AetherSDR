@@ -563,6 +563,12 @@
   "split": "",
   "confidence": "high"
  },
+ "core/MqttSpotSelected.h": {
+  "tag": "ui-support",
+  "note": "Payload builder for the aethersdr/spot/selected MQTT topic (a clicked panadapter spot, with its beam heading when known), for station controllers; pure, like core/MqttRadioState.h. External integration plumbing.",
+  "split": "",
+  "confidence": "high"
+ },
  "core/NetRecurrence.h": {
   "tag": "ui-support",
   "note": "Pure RRULE math for net reminders; NetEntry is operator-scoped client state, so aligns with NetScheduler/NetEntry",

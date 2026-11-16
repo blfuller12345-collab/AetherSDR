@@ -163,6 +163,7 @@ class MiniPanApplet;
 class PanadapterStack;
 class WorkspaceCanvas;
 class WorkspaceController;
+struct MqttSpotSelectedInputs;
 class WorkspaceWindow;
 class AdaptiveFilterEngine;
 class AppletPanel;
@@ -1181,6 +1182,7 @@ private:
     void showMqttSettingsDialog();
     void publishCwDecodeMqtt(const QString& text, float cost, bool rx);
     void publishRadioStateMqtt();
+    void publishSpotSelectedMqtt(const MqttSpotSelectedInputs& spot);
     void refreshRadioStateDriveAuthority();
 #endif
     void applyPanLayout(const QString& layoutId);

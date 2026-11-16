@@ -1103,6 +1103,7 @@ set(CORE_SOURCES
     src/core/LocationAddressResolver.cpp
     src/core/MqttAntennaAlias.cpp
     src/core/MqttRadioState.cpp
+    src/core/MqttSpotSelected.cpp
     src/core/MqttSettings.cpp
     src/core/AutomationBridgeSettings.cpp
     src/core/SpotCommandPolicy.cpp

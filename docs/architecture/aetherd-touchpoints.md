@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 289 touchpoint headers (234 core, 55 models) — 289/289 tagged, 0/289 converted.
+**Totals:** 290 touchpoint headers (235 core, 55 models) — 290/290 tagged, 0/290 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -106,6 +106,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/MqttClient.h` | 3 | ui-support — Generic libmosquitto MQTT pub/sub wrapper for external integrations; no radio state, needs a home not a protocol msg | unconverted |
 | `core/MqttRadioState.h` | 1 | ui-support — Pure payload builder for the MQTT aethersdr/radio/state topic; external integration plumbing, not radio state | unconverted |
 | `core/MqttSettings.h` | 6 | ui-support — Settings store for the MQTT broker bridge (conn config, topics, buttons, keychain); external integration plumbing | unconverted |
+| `core/MqttSpotSelected.h` | 2 | ui-support — Payload builder for the aethersdr/spot/selected MQTT topic (a clicked panadapter spot, with its beam heading when known), for station controllers; pure, like core/MqttRadioState.h. External integration plumbing. | unconverted |
 | `core/N1MMSpotClient.h` | 3 | universal — UDP listener for N1MMSpot XML bandmap spots from contest loggers (N1MM+, DXLog), emitting explicit add/delete events (#2906). Radio-agnostic spot ingestion — 'SmartSDR-CAT compatible' names the third-party protocol it mimics, not a dependency on the radio wire. | unconverted |
 | `core/N1MMSpotParser.h` | 2 | universal — Parser and value type for N1MM/DXLog spot documents, including the (dxcall, band) spot key. Radio-agnostic spot data. | unconverted |
 | `core/NetRecurrence.h` | 1 | ui-support — Pure RRULE math for net reminders; NetEntry is operator-scoped client state, so aligns with NetScheduler/NetEntry | unconverted |
