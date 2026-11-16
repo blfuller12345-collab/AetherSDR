@@ -7167,6 +7167,14 @@ target_include_directories(qrz_callsign_test PRIVATE src)
 target_link_libraries(qrz_callsign_test PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME qrz_callsign_test COMMAND qrz_callsign_test)
 
+# Distance/bearing text shared by the Callsign Card and spot tooltips (#6603).
+add_executable(distance_bearing_text_test
+    tests/distance_bearing_text_test.cpp
+)
+target_include_directories(distance_bearing_text_test PRIVATE src)
+target_link_libraries(distance_bearing_text_test PRIVATE Qt6::Core)
+add_test(NAME distance_bearing_text_test COMMAND distance_bearing_text_test)
+
 # #4411: AdifParser::extractField's length guard must not overflow int on a
 # crafted <FIELD:len> token. Socket-free; real files through parseFile().
 add_executable(adif_parser_test

@@ -1,5 +1,7 @@
 #include "CallsignCard.h"
 
+#include "DistanceBearingText.h"
+
 #include "core/ThemeManager.h"
 
 #include <QDesktopServices>
@@ -56,21 +58,6 @@ private:
                 QUrl(QStringLiteral("https://www.qrz.com/db/%1").arg(call)));
     }
 };
-
-// "2,412 mi @ 078°" / "3 881 km @ 078°" from the operator's position;
-// "~" marks a DXCC-country-center estimate.  Locale picks the unit.
-QString formatDistanceBearing(double km, double bearingDeg, bool approx)
-{
-    const bool imperial =
-        QLocale().measurementSystem() != QLocale::MetricSystem;
-    const double value = imperial ? km * 0.621371 : km;
-    const QString unit = imperial ? QStringLiteral("mi") : QStringLiteral("km");
-    return QStringLiteral("%1%L2 %3 @ %4°")
-        .arg(approx ? QStringLiteral("~") : QString())
-        .arg(qRound(value))
-        .arg(unit)
-        .arg(qRound(bearingDeg), 3, 10, QLatin1Char('0'));
-}
 
 // Rounded-corner copy of a station photo scaled to fill edge×edge.
 QPixmap roundedPhoto(const QPixmap& src, int edge, int radius)

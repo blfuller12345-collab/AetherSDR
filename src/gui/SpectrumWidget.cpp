@@ -11,6 +11,7 @@
 #include "gui/FftTraceSmoothing.h"
 #include "gui/SpectrumGrid.h"
 #include "DbmRangeTransition.h"
+#include "DistanceBearingText.h"
 #include "DssDcEdgeMath.h"
 #include "DssSupplementalCoverage.h"
 #include "KiwiSdrTraceMath.h"
@@ -16899,6 +16900,11 @@ static QString spotMarkerTooltip(const SpectrumWidget::SpotMarker& sm)
     }
 
     QString tip = QString("<b>%1</b>  %2 MHz").arg(sm.callsign).arg(sm.freqMhz, 0, 'f', 4);
+    // Distance and beam heading (#6603); left out when either end's position
+    // is unknown. Same text as the Callsign Card.
+    if (sm.distanceKm >= 0.0 && sm.bearingDeg >= 0.0)
+        tip += QStringLiteral("<br>") + AetherSDR::formatDistanceBearing(
+                   sm.distanceKm, sm.bearingDeg, sm.distanceApprox).toHtmlEscaped();
     if (!sm.source.isEmpty())
         tip += QString("<br>Source: %1").arg(sm.source);
     if (!sm.spotterCallsign.isEmpty())
