@@ -41,6 +41,11 @@ MqttDisplayPayload parseMqttDisplayPayload(const QByteArray& payload, int maxCha
         if (text.isString()) {
             out.text = text.toString().left(maxChars);
             out.color = normalizedMqttDisplayColor(obj.value(QStringLiteral("color")).toString());
+            const QJsonValue label = obj.value(QStringLiteral("label"));
+            if (label.isString()) {
+                out.hasLabel = true;
+                out.label = label.toString().trimmed().left(maxChars);
+            }
             return out;
         }
     }

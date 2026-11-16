@@ -234,7 +234,8 @@ void MqttApplet::onMessageReceived(const QString& topic, const QByteArray& paylo
         const MqttTopicDef& td = m_topicDefs.at(i);
         if (td.displayOnPan && td.topic == topic) {
             const MqttDisplayPayload shown = parseMqttDisplayPayload(payload);
-            emit displayValueChanged(topic, i, mqttTopicDisplayLabel(td),
+            emit displayValueChanged(topic, i,
+                                     shown.hasLabel ? shown.label : mqttTopicDisplayLabel(td),
                                      shown.text, shown.color);
             break;
         }
