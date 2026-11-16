@@ -7317,6 +7317,17 @@ target_include_directories(mqtt_spot_selected_test PRIVATE src)
 target_link_libraries(mqtt_spot_selected_test PRIVATE Qt6::Core)
 add_test(NAME mqtt_spot_selected_test COMMAND mqtt_spot_selected_test)
 
+# Auto ESC heading memory: heading payloads, the beam-stopped detector, and
+# per-band / per-10-degree storage with its JSON round trip. Pure logic.
+add_executable(esc_heading_memory_test
+    tests/esc_heading_memory_test.cpp
+    src/gui/EscHeadingMemory.cpp
+    src/gui/EscAutoSweep.cpp
+)
+target_include_directories(esc_heading_memory_test PRIVATE src)
+target_link_libraries(esc_heading_memory_test PRIVATE Qt6::Core)
+add_test(NAME esc_heading_memory_test COMMAND esc_heading_memory_test)
+
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
 # to computeCenters() can't silently regress the per-band point counts.

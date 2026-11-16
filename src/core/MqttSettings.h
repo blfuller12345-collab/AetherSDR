@@ -80,6 +80,10 @@ inline constexpr QLatin1String kAx25TxTopic     {"aethersdr/ax25/tx"};
 // frequency, mode and, when known, the beam heading. Payload: core/MqttSpotSelected.h.
 inline constexpr QLatin1String kSpotSelectedTopic {"aethersdr/spot/selected"};
 
+// Beam heading from a station controller: "135" or {"heading":135,"band":"2m"}.
+// Used by Auto ESC to recall the saved phase/gain for that heading.
+inline constexpr QLatin1String kRotorHeadingTopic {"aethersdr/rotor/heading"};
+
 // Describes one internal MQTT topic for display in the settings dialog and
 // for driving the subscription/publish lists.  Topics with gateable=false
 // (antenna alias) are always active and shown grayed-out in the dialog.
