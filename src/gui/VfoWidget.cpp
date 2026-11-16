@@ -42,6 +42,7 @@
 
 #include <QDateTime>
 #include <QAction>
+#include <QActionGroup>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPushButton>
@@ -1811,6 +1812,18 @@ void VfoWidget::buildTabContent()
         m_escPlus180Btn->setFixedWidth(40);
         m_escPlus180Btn->setStyleSheet(kDspToggle);
         escTopRow->addWidget(m_escPlus180Btn);
+        m_escAutoBtn = new QPushButton("A");
+        m_escAutoBtn->setObjectName(QStringLiteral("escAuto"));
+        m_escAutoBtn->setAccessibleName("Auto ESC");
+        m_escAutoBtn->setAccessibleDescription(
+            "Sweeps ESC phase and gain and keeps the setting with the strongest "
+            "signal, or the deepest null. Right-click to choose.");
+        m_escAutoBtn->setCheckable(true);
+        m_escAutoBtn->setFixedHeight(20);
+        m_escAutoBtn->setFixedWidth(20);
+        m_escAutoBtn->setStyleSheet(kDspToggle);
+        m_escAutoBtn->setContextMenuPolicy(Qt::CustomContextMenu);
+        escTopRow->addWidget(m_escAutoBtn);
         escVbox->addLayout(escTopRow);
 
         // Gain vertical slider + polar plot row
@@ -1861,6 +1874,19 @@ void VfoWidget::buildTabContent()
         m_escDbmLbl->setAlignment(Qt::AlignRight);
         escMeterRow->addWidget(m_escDbmLbl);
         escVbox->addLayout(escMeterRow);
+
+        // Auto ESC progress and result (#6589); empty and hidden otherwise.
+        m_escAutoStatusLbl = new QLabel;
+        m_escAutoStatusLbl->setObjectName(QStringLiteral("escAutoStatus"));
+        m_escAutoStatusLbl->setStyleSheet(kLabelStyle);
+        m_escAutoStatusLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        m_escAutoStatusLbl->setContentsMargins(0, 0, 10, 0);
+        m_escAutoStatusLbl->setVisible(false);
+        escVbox->addWidget(m_escAutoStatusLbl);
+
+        m_escSweepTimer = new QTimer(this);
+        m_escSweepTimer->setSingleShot(true);
+        connect(m_escSweepTimer, &QTimer::timeout, this, &VfoWidget::onEscSweepTimer);
 
         vb->addWidget(m_escPanel);
 
@@ -1962,8 +1988,23 @@ void VfoWidget::buildTabContent()
         connect(m_escBtn, &QPushButton::toggled, this, [this](bool on) {
             if (!m_updatingFromModel && m_slice)
                 m_slice->setEscEnabled(on);
+            updateEscAutoAvailability();
+        });
+        connect(m_escAutoBtn, &QPushButton::toggled, this, [this](bool on) {
+            if (on)
+                startEscAutoSweep();
+            else if (m_escSweep.active())
+                stopEscAutoSweep(true, QStringLiteral("Auto ESC cancelled"));
+        });
+        connect(m_escAutoBtn, &QWidget::customContextMenuRequested, this,
+                [this](const QPoint& pos) {
+            showEscAutoMenu(m_escAutoBtn->mapToGlobal(pos));
         });
         connect(m_escPhaseSlider, &QSlider::valueChanged, this, [this](int v) {
+            // Touching phase by hand during Auto ESC cancels it and keeps the
+            // operator's own setting (#6589).
+            if (m_escSweep.active() && !m_escSweepDriving && !m_updatingFromModel)
+                stopEscAutoSweep(false, QStringLiteral("Auto ESC cancelled"));
             int deg = v * 5;  // 5° steps
             float rad = deg * static_cast<float>(M_PI) / 180.0f;
             m_escPhaseLbl->setText(QString::number(deg) + QChar(0x00B0));
@@ -1980,6 +2021,8 @@ void VfoWidget::buildTabContent()
             m_escPhaseSlider->setValue(v);
         });
         connect(m_escGainSlider, &QSlider::valueChanged, this, [this](int v) {
+            if (m_escSweep.active() && !m_escSweepDriving && !m_updatingFromModel)
+                stopEscAutoSweep(false, QStringLiteral("Auto ESC cancelled"));
             float gain = v / 100.0f;
             m_escGainLbl->setText(QString::number(gain, 'f', 2));
             m_phaseKnob->setGain(gain);
@@ -1993,6 +2036,8 @@ void VfoWidget::buildTabContent()
         // don't bounce back into setPhase/setGain.
         connect(m_phaseKnob, &PhaseKnob::phaseChanged, this, [this](float rad) {
             if (m_updatingFromModel) return;
+            if (m_escSweep.active())
+                stopEscAutoSweep(false, QStringLiteral("Auto ESC cancelled"));
             int deg = static_cast<int>(std::lround(rad * 180.0f / static_cast<float>(M_PI))) % 360;
             if (deg < 0) deg += 360;
             {
@@ -2004,6 +2049,8 @@ void VfoWidget::buildTabContent()
         });
         connect(m_phaseKnob, &PhaseKnob::gainChanged, this, [this](float gain) {
             if (m_updatingFromModel) return;
+            if (m_escSweep.active())
+                stopEscAutoSweep(false, QStringLiteral("Auto ESC cancelled"));
             {
                 QSignalBlocker sb(m_escGainSlider);
                 m_escGainSlider->setValue(static_cast<int>(std::lround(gain * 100.0f)));
@@ -3525,6 +3572,9 @@ void VfoWidget::syncEscPanelVisibility()
         m_escPanel->setMaximumHeight(0);
     }
     m_escPanel->setVisible(showEscPanel);
+    if (!showEscPanel && m_escSweep.active())
+        stopEscAutoSweep(false, QString());
+    updateEscAutoAvailability();
     relayoutToCurrentContent();
 }
 
@@ -3983,10 +4033,171 @@ void VfoWidget::saveFilterEdgesPref()
 void VfoWidget::setEscLevel(float dbm)
 {
     m_escLevelDbm = dbm;
+    if (m_escSweepCollecting && std::isfinite(dbm)) {
+        m_escSweepSum += dbm;
+        ++m_escSweepSamples;
+    }
     if (m_escDbmLbl)
         m_escDbmLbl->setText(QString("%1 dBm").arg(dbm, 0, 'f', 0));
     if (m_escMeterBar)
         m_escMeterBar->update();
+}
+
+// ── Auto ESC (#6589) ─────────────────────────────────────────────────────
+// Each point: apply phase/gain, let the radio and meter settle, then average
+// the ESC meter for a short window and report it to EscAutoSweep.
+namespace {
+constexpr int kEscSweepSettleMs  = 250;  // after a change, before reading
+constexpr int kEscSweepCollectMs = 300;  // averaging window per point
+}
+
+void VfoWidget::updateEscAutoAvailability()
+{
+    if (!m_escAutoBtn)
+        return;
+    const bool escOn = m_escBtn && m_escBtn->isChecked();
+    if (!escOn && m_escSweep.active())
+        stopEscAutoSweep(true, QStringLiteral("Auto ESC stopped: ESC was turned off"));
+    // Dimmed with a stated reason, never hidden (docs/agents/gui.md).
+    m_escAutoBtn->setEnabled(escOn);
+    const QString target = m_escAutoTarget == EscAutoSweep::Target::Peak
+        ? QStringLiteral("strongest signal")
+        : QStringLiteral("deepest null");
+    m_escAutoBtn->setToolTip(escOn
+        ? QStringLiteral("Auto ESC: sweep %1 and keep the %2. Click again, or "
+                         "move a control, to cancel. Right-click for options.")
+              .arg(m_escAutoTuneGain ? QStringLiteral("phase and gain")
+                                     : QStringLiteral("phase"),
+                   target)
+        : QStringLiteral("Auto ESC needs ESC turned on."));
+    // Same reason on the accessible channel as on the tooltip.
+    m_escAutoBtn->setAccessibleDescription(m_escAutoBtn->toolTip());
+}
+
+void VfoWidget::showEscAutoMenu(const QPoint& globalPos)
+{
+    QMenu menu(this);
+    auto* group = new QActionGroup(&menu);
+    auto* peak = menu.addAction(QStringLiteral("Strongest signal"));
+    auto* null = menu.addAction(QStringLiteral("Deepest null"));
+    for (QAction* a : {peak, null}) {
+        a->setCheckable(true);
+        group->addAction(a);
+    }
+    peak->setChecked(m_escAutoTarget == EscAutoSweep::Target::Peak);
+    null->setChecked(m_escAutoTarget == EscAutoSweep::Target::Null);
+    menu.addSeparator();
+    auto* gain = menu.addAction(QStringLiteral("Also sweep gain"));
+    gain->setCheckable(true);
+    gain->setChecked(m_escAutoTuneGain);
+    // The choice applies to the next sweep, not one already running.
+    for (QAction* a : {peak, null, gain})
+        a->setEnabled(!m_escSweep.active());
+
+    QAction* chosen = menu.exec(globalPos);
+    if (chosen == peak)
+        m_escAutoTarget = EscAutoSweep::Target::Peak;
+    else if (chosen == null)
+        m_escAutoTarget = EscAutoSweep::Target::Null;
+    else if (chosen == gain)
+        m_escAutoTuneGain = gain->isChecked();
+    updateEscAutoAvailability();
+}
+
+void VfoWidget::startEscAutoSweep()
+{
+    if (!m_slice || !m_escBtn || !m_escBtn->isChecked() || !m_escPanel
+        || !m_escPanel->isVisible()) {
+        QSignalBlocker sb(m_escAutoBtn);
+        m_escAutoBtn->setChecked(false);
+        return;
+    }
+    m_escSweep.start({m_escPhaseSlider->value() * EscAutoSweep::kPhaseStepDeg,
+                      m_escGainSlider->value()},
+                     m_escAutoTarget, m_escAutoTuneGain);
+    m_escAutoStatusLbl->setVisible(true);
+    applyEscSweepPoint(m_escSweep.current());
+}
+
+void VfoWidget::applyEscSweepPoint(const EscAutoSweep::Point& point)
+{
+    m_escSweepCollecting = false;
+    m_escSweepSum = 0.0;
+    m_escSweepSamples = 0;
+
+    m_escSweepDriving = true;
+    m_escPhaseSlider->setValue(point.phaseDeg / EscAutoSweep::kPhaseStepDeg);
+    m_escGainSlider->setValue(point.gainPct);
+    m_escSweepDriving = false;
+
+    if (m_escSweep.active()) {
+        m_escAutoStatusLbl->setText(
+            QStringLiteral("Auto ESC %1/%2")
+                .arg(std::min(m_escSweep.measuredCount() + 1, m_escSweep.expectedTotal()))
+                .arg(m_escSweep.expectedTotal()));
+        m_escSweepTimer->start(kEscSweepSettleMs);
+    }
+}
+
+void VfoWidget::onEscSweepTimer()
+{
+    if (!m_escSweep.active())
+        return;
+    if (!m_escSweepCollecting) {
+        // Settled: start averaging the meter.
+        m_escSweepCollecting = true;
+        m_escSweepSum = 0.0;
+        m_escSweepSamples = 0;
+        m_escSweepTimer->start(kEscSweepCollectMs);
+        return;
+    }
+
+    m_escSweepCollecting = false;
+    const bool valid = m_escSweepSamples > 0;
+    const double level = valid ? m_escSweepSum / m_escSweepSamples : 0.0;
+    if (m_escSweep.report(level, valid)) {
+        applyEscSweepPoint(m_escSweep.current());
+        return;
+    }
+
+    // Finished.
+    if (!m_escSweep.hasResult()) {
+        stopEscAutoSweep(true, QStringLiteral("Auto ESC: no ESC meter readings"));
+        return;
+    }
+    const EscAutoSweep::Point best = m_escSweep.best();
+    applyEscSweepPoint(best);
+    const double delta = m_escSweep.improvementDb();
+    const QString what = m_escSweep.target() == EscAutoSweep::Target::Peak
+        ? QStringLiteral("stronger") : QStringLiteral("deeper");
+    const QString status = (m_escSweep.hasBaseline() && delta > 0.05)
+        ? QStringLiteral("Auto ESC: %1 dB %2 (%3\u00B0, %4)")
+              .arg(delta, 0, 'f', 1)
+              .arg(what)
+              .arg(best.phaseDeg)
+              .arg(best.gainPct / 100.0, 0, 'f', 2)
+        : QStringLiteral("Auto ESC: no better setting found");
+    stopEscAutoSweep(false, status);
+}
+
+void VfoWidget::stopEscAutoSweep(bool restoreStart, const QString& status)
+{
+    const bool wasActive = m_escSweep.active();
+    const EscAutoSweep::Point start = m_escSweep.startPoint();
+    m_escSweep.cancel();
+    m_escSweepCollecting = false;
+    if (m_escSweepTimer)
+        m_escSweepTimer->stop();
+    if (restoreStart && wasActive && m_slice)
+        applyEscSweepPoint(start);
+    if (m_escAutoBtn) {
+        QSignalBlocker sb(m_escAutoBtn);
+        m_escAutoBtn->setChecked(false);
+    }
+    if (m_escAutoStatusLbl) {
+        m_escAutoStatusLbl->setText(status);
+        m_escAutoStatusLbl->setVisible(!status.isEmpty());
+    }
 }
 
 void VfoWidget::setAfGain(int pct)
@@ -4973,6 +5184,10 @@ void VfoWidget::setSlice(SliceModel* slice)
 {
     qDebug() << "VfoWidget::setSlice:" << (slice ? slice->sliceId() : -1)
              << "old:" << (m_slice ? m_slice->sliceId() : -1);
+    // A sweep belongs to the slice it started on: put that slice back
+    // before letting go of it (#6589).
+    if (m_escSweep.active())
+        stopEscAutoSweep(true, QString());
     if (m_slice)
         m_slice->disconnect(this);
     m_slice = slice;
@@ -5270,6 +5485,7 @@ void VfoWidget::setSlice(SliceModel* slice)
         QSignalBlocker sb(m_escBtn);
         m_escBtn->setChecked(on);
         m_updatingFromModel = false;
+        updateEscAutoAvailability();
     });
     connect(m_slice, &SliceModel::escGainChanged, this, [this](float gain) {
         m_updatingFromModel = true;
