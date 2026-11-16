@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 
+#include "EscAutoSweep.h"
 #include "core/KiwiSdrProtocol.h"
 #include "core/backends/RadioCapabilities.h"
 
@@ -594,6 +595,25 @@ private:
     QLabel*      m_escDbmLbl{nullptr};
     QWidget*     m_escMeterBar{nullptr};
     float        m_escLevelDbm{-130.0f};
+    // Auto ESC (#6589): the "A" button sweeps phase (and gain) on the ESC
+    // meter and leaves the controls at the best point. Right-click picks
+    // strongest signal or deepest null, and whether gain is swept too.
+    QPushButton* m_escAutoBtn{nullptr};
+    QLabel*      m_escAutoStatusLbl{nullptr};
+    QTimer*      m_escSweepTimer{nullptr};
+    EscAutoSweep m_escSweep;
+    EscAutoSweep::Target m_escAutoTarget{EscAutoSweep::Target::Peak};
+    bool         m_escAutoTuneGain{true};
+    bool         m_escSweepDriving{false};     // our own slider moves
+    bool         m_escSweepCollecting{false};  // meter readings count now
+    double       m_escSweepSum{0.0};
+    int          m_escSweepSamples{0};
+    void startEscAutoSweep();
+    void stopEscAutoSweep(bool restoreStart, const QString& status);
+    void applyEscSweepPoint(const EscAutoSweep::Point& point);
+    void onEscSweepTimer();
+    void updateEscAutoAvailability();
+    void showEscAutoMenu(const QPoint& globalPos);
     bool         m_diversityAllowed{true};
     bool         m_escControlsAvailable{true};
     void syncEscPanelVisibility();
