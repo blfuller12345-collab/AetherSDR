@@ -4,6 +4,7 @@
 // panFollowVfo()/revealFrequencyIfNeeded().
 
 #include "MainWindow.h"
+#include "AntennaGeniusNameBridge.h"
 #include "ControlAvailabilityRegistry.h"
 #include "HGauge.h"
 #include "StatusIndicator.h"
@@ -6730,6 +6731,10 @@ void MainWindow::wireMeters()
                     result.status == PeripheralAuthStore::LoadStatus::Unavailable);
             });
     });
+    // Antenna Genius port -> radio antenna button names (#4892). Owned by
+    // this window; does nothing until a port is mapped in Radio Setup.
+    new AntennaGeniusNameBridge(&m_radioModel, &m_antennaGenius, this);
+
     connect(&m_antennaGenius, &AntennaGeniusModel::authCodeRequired, this,
             [this](quint64 attempt) {
         PeripheralAuthStore::load(PeripheralAuthStore::Device::AntennaGenius,

@@ -20,6 +20,7 @@
 #include "SliceColorManager.h"
 #include "models/RadioModel.h"
 #include "models/XvtrPolicy.h"
+#include "core/AntennaGeniusPortMap.h"
 #include "core/AppSettings.h"
 #include "core/AutomationBridgeSettings.h"
 #ifdef HAVE_HIDAPI
@@ -6446,6 +6447,64 @@ QWidget* RadioSetupDialog::buildAntennaNamesTab()
     groupLayout->addWidget(scroll);
     vbox->addWidget(group, 0);
 
+    // Antenna Genius port wiring (#4892): which radio connector each AG
+    // radio port feeds, so that connector's buttons show the antenna the
+    // AG has selected. "Not used" (the default) leaves the names alone.
+    {
+        auto* agGroup = new QGroupBox("Antenna Genius");
+        auto* agLayout = new QVBoxLayout(agGroup);
+        agLayout->setSpacing(6);
+        auto* agHint = new QLabel(
+            "If an Antenna Genius is connected, choose the radio antenna each of "
+            "its ports is wired to. That antenna's buttons then show the name of "
+            "the antenna the Antenna Genius has selected, and follow it as it "
+            "switches. A name here takes the place of the Custom Name above "
+            "while the Antenna Genius is connected.");
+        agHint->setWordWrap(true);
+        setTone(agHint, Tone::Hint);
+        agLayout->addWidget(agHint);
+
+        auto* agForm = new QGridLayout;
+        agForm->setContentsMargins(8, 2, 8, 2);
+        agForm->setHorizontalSpacing(8);
+        agForm->setColumnStretch(1, 1);
+
+        const AntennaGeniusPortMap current =
+            loadAntennaGeniusPortMap(m_model->settingsScope());
+        const QStringList tokens = m_model->knownAntennaTokens();
+
+        auto makePortCombo = [&](const QString& label, int row,
+                                 const QString& selected, bool isPortA) {
+            auto* lbl = new QLabel(label);
+            agForm->addWidget(lbl, row, 0);
+            auto* combo = new QComboBox;
+            combo->setAccessibleName(label);
+            combo->addItem("Not used", QString());
+            for (const QString& token : tokens)
+                combo->addItem(token, token);
+            if (!selected.isEmpty() && combo->findData(selected) < 0)
+                combo->addItem(selected, selected);
+            const int idx = combo->findData(selected);
+            combo->setCurrentIndex(idx >= 0 ? idx : 0);
+            agForm->addWidget(combo, row, 1);
+            connect(combo, &QComboBox::currentIndexChanged, this,
+                    [this, combo, isPortA](int) {
+                AntennaGeniusPortMap map =
+                    loadAntennaGeniusPortMap(m_model->settingsScope());
+                const QString token = combo->currentData().toString();
+                if (isPortA)
+                    map.portA = token;
+                else
+                    map.portB = token;
+                saveAntennaGeniusPortMap(m_model->settingsScope(), map);
+            });
+        };
+        makePortCombo("Port A feeds:", 0, current.portA, true);
+        makePortCombo("Port B feeds:", 1, current.portB, false);
+        agLayout->addLayout(agForm);
+        vbox->addWidget(agGroup, 0);
+    }
+
     QVBoxLayout* kiwiRowsLayout = nullptr;
     QVBoxLayout* kiwiLayout = nullptr;
 
@@ -6583,7 +6642,7 @@ QWidget* RadioSetupDialog::buildAntennaNamesTab()
             auto* port = makeValueLabel(token);
             grid->addWidget(port, row, 0);
 
-            auto* edit = new QLineEdit(m_model->antennaAlias(token));
+            auto* edit = new QLineEdit(m_model->persistedAntennaAlias(token));
             edit->setMaxLength(16);
             edit->setPlaceholderText(token);
             grid->addWidget(edit, row, 1);

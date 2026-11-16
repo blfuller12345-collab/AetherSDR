@@ -197,6 +197,24 @@ The **AG** applet (Antennas & Switching) controls a 4O3A Antenna Genius.
   that are receive-only on the current band are marked `RX`.
 - **AUTO** per port turns the device's own auto mode on or off for that port.
 
+### Antenna Genius names on the radio's antenna buttons
+
+The Antenna Genius cannot tell AetherSDR which radio antenna connector each of
+its ports is wired to, so set it once in **Settings → Radio Setup... →
+Antennas**, in the **Antenna Genius** group: **Port A feeds:** and **Port B
+feeds:** each list the radio's antenna connectors (`ANT1`, `ANT2` and so on).
+**Not used**, the default, leaves the names alone.
+
+With a port mapped and the Antenna Genius connected, that connector's antenna
+buttons on the VFO flag, the RX applet and the panadapter menu show the name of
+the antenna the Antenna Genius has selected on that port, and change as the
+Antenna Genius switches antennas with the band. The name replaces the
+connector's **Custom Name** while the Antenna Genius is connected; the custom
+name is kept and comes back when it disconnects. The flag's button has room for
+about six characters; the full name is in its tooltip and menu.
+
+The setting is kept per radio.
+
 ## Reference
 
 ### Device types and defaults

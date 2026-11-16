@@ -3609,7 +3609,25 @@ bool RadioModel::reloadAntennaAliases() const
     return changed;
 }
 
+QMap<QString, QString> RadioModel::effectiveAntennaAliases() const
+{
+    reloadAntennaAliases();
+    if (m_antennaLiveNames.isEmpty())
+        return m_antennaAliases;
+    QMap<QString, QString> merged = m_antennaAliases;
+    for (auto it = m_antennaLiveNames.constBegin();
+         it != m_antennaLiveNames.constEnd(); ++it) {
+        merged.insert(it.key(), it.value());
+    }
+    return merged;
+}
+
 QString RadioModel::antennaAlias(const QString& token) const
+{
+    return AntennaAliasStore::alias(effectiveAntennaAliases(), token);
+}
+
+QString RadioModel::persistedAntennaAlias(const QString& token) const
 {
     reloadAntennaAliases();
     return AntennaAliasStore::alias(m_antennaAliases, token);
@@ -3618,15 +3636,29 @@ QString RadioModel::antennaAlias(const QString& token) const
 QString RadioModel::antennaDisplayName(const QString& token,
                                        bool includeTokenForDisambiguation) const
 {
-    reloadAntennaAliases();
     return AntennaAliasStore::displayName(
-        m_antennaAliases, token, includeTokenForDisambiguation);
+        effectiveAntennaAliases(), token, includeTokenForDisambiguation);
 }
 
 QString RadioModel::antennaShortDisplayName(const QString& token, int maxChars) const
 {
-    reloadAntennaAliases();
-    return AntennaAliasStore::shortDisplayName(m_antennaAliases, token, maxChars);
+    return AntennaAliasStore::shortDisplayName(effectiveAntennaAliases(), token, maxChars);
+}
+
+void RadioModel::setAntennaLiveName(const QString& token, const QString& name)
+{
+    if (token.isEmpty())
+        return;
+    const QString trimmed = name.trimmed();
+    if (trimmed.isEmpty()) {
+        if (!m_antennaLiveNames.remove(token))
+            return;
+    } else {
+        if (m_antennaLiveNames.value(token) == trimmed)
+            return;
+        m_antennaLiveNames.insert(token, trimmed);
+    }
+    emit antennaAliasesChanged();
 }
 
 QMap<QString, QString> RadioModel::antennaAliases() const
@@ -3638,14 +3670,14 @@ QMap<QString, QString> RadioModel::antennaAliases() const
 bool RadioModel::antennaAliasNeedsDisambiguation(const QString& token,
                                                  const QStringList& tokens) const
 {
-    reloadAntennaAliases();
-    const QString a = AntennaAliasStore::alias(m_antennaAliases, token);
+    const QMap<QString, QString> aliases = effectiveAntennaAliases();
+    const QString a = AntennaAliasStore::alias(aliases, token);
     if (a.isEmpty())
         return false;
 
     int count = 0;
     for (const QString& other : tokens) {
-        if (AntennaAliasStore::alias(m_antennaAliases, other) == a)
+        if (AntennaAliasStore::alias(aliases, other) == a)
             ++count;
     }
     return count > 1;

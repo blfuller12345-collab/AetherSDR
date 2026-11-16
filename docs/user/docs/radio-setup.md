@@ -126,7 +126,7 @@ The table shows the current TX profile's values and follows the radio while it's
 
 | Page | What it covers |
 |------|----------------|
-| **Antennas** | Local display names for antenna ports, and the **KiwiSDR RX Antennas** list. See [KiwiSDR and Web-888](./kiwisdr-and-web-888.md). |
+| **Antennas** | Local display names for antenna ports, which radio connector each **Antenna Genius** port feeds (see [Antenna Genius names](./peripherals.md#antenna-genius-names-on-the-radios-antenna-buttons)), and the **KiwiSDR RX Antennas** list. See [KiwiSDR and Web-888](./kiwisdr-and-web-888.md). |
 | **Transverters** | One tab per transverter plus **+** to add one. See [XVTR (Transverters)](./xvtr-transverters.md). |
 | **APD** | Adaptive predistortion external sampler per TX antenna. Only on radios that report APD support (FLEX-8000 series). |
 | **USB Cables** | The radio's USB cables, each with a Cable Type of CAT, Bit, BCD, LDPA or Passthrough. See [USB Cable Management](./usb-cable-management.md). |
