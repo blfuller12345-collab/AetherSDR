@@ -634,11 +634,20 @@ public:
     }
     bool propForecastVisible() const { return m_propForecastVisible; }
 
-    // MQTT device status overlay (#699)
-    void setMqttDisplayValue(const QString& key, const QString& value) {
-        m_mqttDisplayValues[key] = value; markOverlayDirty();
+    // MQTT device status overlay (#699).  Keyed by full topic so topics
+    // sharing a last path segment both show; drawn in `order` (the
+    // Subscriptions-list position), not alphabetically (#7136).
+    void setMqttDisplayValue(const QString& topic, int order,
+                             const QString& label, const QString& value) {
+        m_mqttDisplayValues[topic] = MqttDisplayEntry{order, label, value};
+        markOverlayDirty();
     }
     void clearMqttDisplay() { m_mqttDisplayValues.clear(); markOverlayDirty(); }
+    // Stacked = one "Label: value" per line; otherwise one line (#7136).
+    void setMqttOverlayStacked(bool stacked) {
+        if (m_mqttOverlayStacked == stacked) return;
+        m_mqttOverlayStacked = stacked; markOverlayDirty();
+    }
 
     // NB Waterfall Blanker (#277) — client-side impulse suppression
     void setWfBlankerEnabled(bool on);
@@ -2160,7 +2169,13 @@ private:
     int  m_propSfi{-1};
 
     // MQTT device status overlay
-    QMap<QString, QString> m_mqttDisplayValues;
+    struct MqttDisplayEntry {
+        int     order{0};
+        QString label;
+        QString value;
+    };
+    QMap<QString, MqttDisplayEntry> m_mqttDisplayValues;   // key: full topic
+    bool m_mqttOverlayStacked{false};
 
     int     m_topInset{0};   // setTopInset()
     int     m_topRightReserve{0};   // setTopRightReserve()

@@ -169,7 +169,12 @@ void MqttApplet::appendMessageLog(const QString& line)
 void MqttApplet::refreshSettings()
 {
     m_topicDefs = loadMqttTopicConfig();
+    m_overlayLayout = loadMqttOverlayLayout();
     m_buttonDefs = loadMqttButtonConfig();
+    // Labels, order or layout may have changed (#7136): drop what the
+    // panadapter shows so nothing keeps a stale label.  Each value comes
+    // back, with its new label and position, on its topic's next message.
+    emit displayCleared();
     if (m_buttonGrid) {
         rebuildButtons();
     }
@@ -224,9 +229,10 @@ void MqttApplet::onMessageReceived(const QString& topic, const QByteArray& paylo
     }
 
     // Update panadapter overlay for display-enabled user topics only.
-    for (const MqttTopicDef& td : m_topicDefs) {
+    for (int i = 0; i < m_topicDefs.size(); ++i) {
+        const MqttTopicDef& td = m_topicDefs.at(i);
         if (td.displayOnPan && td.topic == topic) {
-            emit displayValueChanged(shortTopic, value);
+            emit displayValueChanged(topic, i, mqttTopicDisplayLabel(td), value);
             break;
         }
     }

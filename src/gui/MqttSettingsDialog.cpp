@@ -9,6 +9,7 @@
 #include "core/ThemeManager.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFormLayout>
@@ -244,11 +245,15 @@ void MqttSettingsDialog::buildUi()
 
     auto* topicsTab = new QWidget;
     auto* topicsLayout = new QVBoxLayout(topicsTab);
-    m_topicsTable = new QTableWidget(0, 2);
-    m_topicsTable->setHorizontalHeaderLabels({tr("Topic"), tr("Display")});
+    m_topicsTable = new QTableWidget(0, 3);
+    m_topicsTable->setHorizontalHeaderLabels({tr("Topic"), tr("Label"), tr("Display")});
+    m_topicsTable->horizontalHeaderItem(1)->setToolTip(
+        tr("Optional name shown on the panadapter. Blank uses the last part of the topic."));
     m_topicsTable->horizontalHeader()->setStretchLastSection(false);
     m_topicsTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    m_topicsTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_topicsTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+    m_topicsTable->horizontalHeader()->resizeSection(1, 110);
+    m_topicsTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     m_topicsTable->verticalHeader()->setVisible(false);
     m_topicsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_topicsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -260,6 +265,16 @@ void MqttSettingsDialog::buildUi()
     topicControls->addWidget(addTopic);
     topicControls->addWidget(removeTopic);
     topicControls->addStretch();
+    topicControls->addWidget(new QLabel(tr("Panadapter layout:")));
+    m_overlayLayoutCombo = new QComboBox;
+    m_overlayLayoutCombo->addItem(tr("Single line"),
+                                  static_cast<int>(MqttOverlayLayout::SingleLine));
+    m_overlayLayoutCombo->addItem(tr("Stacked"),
+                                  static_cast<int>(MqttOverlayLayout::Stacked));
+    m_overlayLayoutCombo->setToolTip(
+        tr("How Display topics are drawn on the panadapter: all on one line, "
+           "or one per line in the order listed above."));
+    topicControls->addWidget(m_overlayLayoutCombo);
     topicsLayout->addLayout(topicControls);
 
     auto* internalGroup = new QGroupBox(tr("Internal AetherSDR Topics"));
@@ -365,6 +380,11 @@ void MqttSettingsDialog::loadSettings()
     for (const MqttTopicDef& def : loadMqttTopicConfig()) {
         addTopicRow(def);
     }
+    {
+        const int idx = m_overlayLayoutCombo->findData(
+            static_cast<int>(loadMqttOverlayLayout()));
+        m_overlayLayoutCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+    }
 
     m_buttonsTable->setRowCount(0);
     for (const MqttButtonDef& def : loadMqttButtonConfig()) {
@@ -399,6 +419,8 @@ void MqttSettingsDialog::saveSettings()
     }
 
     saveMqttTopicConfig(topicRows());
+    saveMqttOverlayLayout(static_cast<MqttOverlayLayout>(
+        m_overlayLayoutCombo->currentData().toInt()));
     saveMqttButtonConfig(buttonRows());
     AppSettings::instance().save();
     savePasswordToKeychain(m_passEdit->text());
@@ -410,7 +432,8 @@ void MqttSettingsDialog::addTopicRow(const MqttTopicDef& def)
     const int row = m_topicsTable->rowCount();
     m_topicsTable->insertRow(row);
     m_topicsTable->setItem(row, 0, textItem(def.topic));
-    m_topicsTable->setItem(row, 1, checkItem(def.displayOnPan));
+    m_topicsTable->setItem(row, 1, textItem(def.label));
+    m_topicsTable->setItem(row, 2, checkItem(def.displayOnPan));
 }
 
 void MqttSettingsDialog::removeSelectedTopicRows()
@@ -426,10 +449,13 @@ QVector<MqttTopicDef> MqttSettingsDialog::topicRows() const
     topics.reserve(m_topicsTable->rowCount());
     for (int row = 0; row < m_topicsTable->rowCount(); ++row) {
         QTableWidgetItem* topicItem = m_topicsTable->item(row, 0);
-        QTableWidgetItem* displayItem = m_topicsTable->item(row, 1);
+        QTableWidgetItem* labelItem = m_topicsTable->item(row, 1);
+        QTableWidgetItem* displayItem = m_topicsTable->item(row, 2);
         const QString topic = topicItem ? topicItem->text().trimmed() : QString();
         if (!topic.isEmpty()) {
-            topics.append({topic, displayItem && displayItem->checkState() == Qt::Checked});
+            topics.append({topic,
+                           displayItem && displayItem->checkState() == Qt::Checked,
+                           labelItem ? labelItem->text().trimmed() : QString()});
         }
     }
     return topics;

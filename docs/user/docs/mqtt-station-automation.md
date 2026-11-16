@@ -57,7 +57,16 @@ The applet shows **On/Off**, the connection status, a log of incoming messages, 
 
 ### Panadapter display
 
-Topics with **Display** ticked show their latest value on the panadapter, so a beam heading or the selected antenna is visible without switching windows. Several displayed topics appear side by side.
+Topics with **Display** ticked show their latest value on the panadapter, so a beam heading or the selected antenna is visible without switching windows. Each value is shown as `Label: value`, in the order the topics are listed on the **Subscriptions** tab.
+
+The label is the last part of the topic (`status` for `lps/hf/status`) unless you type your own in the topic's **Label** column. Two topics that end the same way, such as `lps/hf/status` and `lps/vhf/status`, are both shown; give them labels to tell them apart.
+
+**Panadapter layout**, next to **Add** / **Remove** on the **Subscriptions** tab, sets how the values are drawn:
+
+- **Single line** (default): all values side by side on one line.
+- **Stacked**: one value per line, top to bottom. A topic with no value yet takes no line.
+
+After you change labels, order or layout, each value reappears in its new form when its topic next sends a message.
 
 ## Using the built-in topics
 
@@ -118,7 +127,7 @@ For any MQTT-connected antenna switch (Node-RED, ESP32, Raspberry Pi, …):
 | **TLS**: **Use TLS** | Encrypt the connection |
 | **CA cert** | Optional CA certificate file (**Browse...**); blank uses the system CA bundle |
 
-**Subscriptions**: a table of **Topic** and **Display** with **Add** / **Remove**. Ticking **Display** shows that topic's latest value on the panadapter. Below it, **Internal AetherSDR Topics** lists the built-in subscribe topics with an enable for each.
+**Subscriptions**: a table of **Topic**, **Label** and **Display** with **Add** / **Remove**, and a **Panadapter layout** choice of **Single line** or **Stacked**. Ticking **Display** shows that topic's latest value on the panadapter; **Label** is an optional name to show in front of it. Below it, **Internal AetherSDR Topics** lists the built-in subscribe topics with an enable for each.
 
 **Publish Buttons**: a table of **Label**, **Topic** and **Payload** with **Add** / **Remove**, up to 12 buttons, shown three per row in the applet. Below it, **Internal AetherSDR Topics** lists the built-in publish topics with an enable for each.
 

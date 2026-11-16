@@ -17,6 +17,15 @@ struct MqttConnectionConfig {
 struct MqttTopicDef {
     QString topic;
     bool displayOnPan{false};
+    // Optional name shown on the panadapter overlay instead of the topic's
+    // last path segment (#7136).  Empty = use the last segment.
+    QString label;
+};
+
+// How display-on-pan subscriptions are laid out on the panadapter (#7136).
+enum class MqttOverlayLayout {
+    SingleLine,   // one line, entries separated by spaces (the original look)
+    Stacked,      // one "Label: value" per line, top to bottom
 };
 
 struct MqttButtonDef {
@@ -40,6 +49,18 @@ QString serializeMqttTopicConfig(const QVector<MqttTopicDef>& topics);
 QVector<MqttTopicDef> loadMqttTopicConfig();
 void saveMqttTopicConfig(const QVector<MqttTopicDef>& topics);
 QStringList mqttUserSubscriptionTopics(const QVector<MqttTopicDef>& topics);
+
+// Topic list as the JSON array stored under "topics" (and back).  Exposed
+// for tests; loadMqttTopicConfig/saveMqttTopicConfig use the same shape.
+QString mqttTopicsToJson(const QVector<MqttTopicDef>& topics);
+QVector<MqttTopicDef> mqttTopicsFromJson(const QString& json);
+
+// Name drawn on the panadapter for a subscription: its label when set,
+// otherwise the topic's last path segment (#7136).
+QString mqttTopicDisplayLabel(const MqttTopicDef& def);
+
+MqttOverlayLayout loadMqttOverlayLayout();
+void saveMqttOverlayLayout(MqttOverlayLayout layout);
 
 QStringList internalMqttSubscriptionTopics();
 QStringList mqttSubscriptionTopics(const QStringList& userTopics);

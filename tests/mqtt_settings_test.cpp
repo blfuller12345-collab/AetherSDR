@@ -73,5 +73,49 @@ int main()
                      "publish button JSON preserves second button");
     }
 
+    {
+        // #7136: optional per-subscription label survives a JSON round trip,
+        // and is only written when set.
+        const QVector<MqttTopicDef> topics{
+            {QStringLiteral("lps/hf/status"), true, QStringLiteral("HF Coax")},
+            {QStringLiteral("lps/vhf/status"), true, QString()},
+            {QStringLiteral("station/log"), false, QStringLiteral("  ")},
+        };
+        const QString json = mqttTopicsToJson(topics);
+        ok &= expect(json.count(QStringLiteral("\"label\"")) == 1,
+                     "topic JSON writes a label only when one is set");
+        const QVector<MqttTopicDef> roundTrip = mqttTopicsFromJson(json);
+        ok &= expect(roundTrip.size() == 3, "topic JSON round-trips count");
+        ok &= expect(roundTrip.value(0).label == QStringLiteral("HF Coax")
+                         && roundTrip.value(0).displayOnPan,
+                     "topic JSON preserves label and display flag");
+        ok &= expect(roundTrip.value(1).label.isEmpty()
+                         && roundTrip.value(2).label.isEmpty(),
+                     "blank or whitespace label reads back empty");
+
+        const QVector<MqttTopicDef> oldConfig = mqttTopicsFromJson(QStringLiteral(
+            "[{\"topic\":\"rotator/pos\",\"displayOnPan\":true}]"));
+        ok &= expect(oldConfig.size() == 1
+                         && oldConfig.value(0).topic == QStringLiteral("rotator/pos")
+                         && oldConfig.value(0).displayOnPan
+                         && oldConfig.value(0).label.isEmpty(),
+                     "topic config saved before labels existed still loads");
+    }
+
+    {
+        // #7136: overlay name is the label when set, else the last segment,
+        // so two topics ending in "status" can carry distinct names.
+        ok &= expect(mqttTopicDisplayLabel({QStringLiteral("lps/hf/status"), true,
+                                            QStringLiteral("HF Coax")})
+                         == QStringLiteral("HF Coax"),
+                     "display label uses the subscription label when set");
+        ok &= expect(mqttTopicDisplayLabel({QStringLiteral("lps/vhf/status"), true, {}})
+                         == QStringLiteral("status"),
+                     "display label falls back to the last topic segment");
+        ok &= expect(mqttTopicDisplayLabel({QStringLiteral("plain"), true, {}})
+                         == QStringLiteral("plain"),
+                     "display label of a single-segment topic is the topic");
+    }
+
     return ok ? 0 : 1;
 }

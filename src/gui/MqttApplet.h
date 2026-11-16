@@ -26,6 +26,7 @@ public:
     void setCachedPassword(const QString& password);
     void restoreConnectionState();
     QVector<MqttTopicDef> topicConfig() const { return m_topicDefs; }
+    MqttOverlayLayout overlayLayout() const { return m_overlayLayout; }
 
 signals:
     void connectRequested(const QString& host, quint16 port,
@@ -33,7 +34,13 @@ signals:
                           const QStringList& topics,
                           bool useTls, const QString& caFile);
     void disconnectRequested();
-    void displayValueChanged(const QString& key, const QString& value);
+    // A display-on-pan subscription received a value (#699).  `topic` is the
+    // full topic and is the overlay's key, so two topics that share a last
+    // path segment no longer overwrite each other (#7136).  `order` is the
+    // subscription's position in Settings -> MQTT -> Subscriptions, and
+    // `label` is what the overlay draws in front of the value.
+    void displayValueChanged(const QString& topic, int order,
+                             const QString& label, const QString& value);
     void displayCleared();
     void antennaAliasRequested(const QString& token, const QString& alias);
     void settingsRequested();
@@ -67,6 +74,7 @@ private:
 
     // Per-topic display config
     QVector<MqttTopicDef> m_topicDefs;
+    MqttOverlayLayout     m_overlayLayout{MqttOverlayLayout::SingleLine};
 };
 
 } // namespace AetherSDR
