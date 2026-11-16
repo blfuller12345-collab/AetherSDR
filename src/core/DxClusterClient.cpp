@@ -1,4 +1,5 @@
 #include "DxClusterClient.h"
+#include "SpotPositionRegistry.h"
 #include "DxSpotLineParser.h"
 #include "AppSettings.h"
 #include "LogManager.h"
@@ -286,6 +287,14 @@ void DxClusterClient::handleLine(const QString& line)
         }
         qCDebug(lcDxCluster) << "DxClusterClient: spot" << spot.dxCall
                  << spot.freqMhz << "MHz de" << spot.spotterCall;
+        // A grid the spotter reported (upper case; the cluster's own guess is
+        // lower case and only a database home QTH) places the station for
+        // the panadapter's distance/heading (#6603).
+        if (spot.dxGrid.size() >= 4 && spot.dxGrid == spot.dxGrid.toUpper()) {
+            SpotPositionRegistry::instance().rememberGrid(
+                spot.dxCall, spot.dxGrid, SpotPositionRegistry::Source::Grid,
+                QDateTime::currentMSecsSinceEpoch());
+        }
         emit spotReceived(spot);
     }
 }

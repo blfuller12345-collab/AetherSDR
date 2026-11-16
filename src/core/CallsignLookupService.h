@@ -77,8 +77,8 @@ public:
     CallsignInfo cachedEntry(const QString& call);  // !isValid() when absent
 
     // Distance and bearing to a station WITHOUT any network request (#6603):
-    // a cached QRZ record if there is one, otherwise the cty.dat country
-    // center. distanceKm/bearingDeg are < 0 when the operator's position or
+    // a position the spot carried (POTA park, cluster grid) if one is fresh,
+    // else a cached QRZ record, otherwise the cty.dat country center. distanceKm/bearingDeg are < 0 when the operator's position or
     // the station's is unknown; distanceApprox marks a country center.
     CallsignInfo offlineGeo(const QString& call);
 
