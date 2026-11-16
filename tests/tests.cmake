@@ -7267,6 +7267,18 @@ target_include_directories(mqtt_settings_test PRIVATE src)
 target_link_libraries(mqtt_settings_test PRIVATE Qt6::Core)
 add_test(NAME mqtt_settings_test COMMAND mqtt_settings_test)
 
+# Antenna Genius port -> radio antenna name mapping (#4892).
+add_executable(antenna_genius_port_map_test
+    tests/antenna_genius_port_map_test.cpp
+    src/core/AntennaGeniusPortMap.cpp
+    $<TARGET_OBJECTS:aether_test_settings>
+    $<TARGET_OBJECTS:aether_test_log_manager>
+    $<TARGET_OBJECTS:aether_test_async_log_writer>
+)
+target_include_directories(antenna_genius_port_map_test PRIVATE src)
+target_link_libraries(antenna_genius_port_map_test PRIVATE Qt6::Core)
+add_test(NAME antenna_genius_port_map_test COMMAND antenna_genius_port_map_test)
+
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
 # to computeCenters() can't silently regress the per-band point counts.
@@ -11780,6 +11792,7 @@ set(AETHER_SETTINGS_CONSUMERS
     window_shortcut_test
     antenna_alias_test
     mqtt_settings_test
+    antenna_genius_port_map_test
     mqtt_radio_state_test
     ax25_libmodem_shim_test
     ax25_replay

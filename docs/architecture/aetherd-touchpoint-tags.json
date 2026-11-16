@@ -563,6 +563,12 @@
   "split": "",
   "confidence": "high"
  },
+ "core/AntennaGeniusPortMap.h": {
+  "tag": "peripheral(4o3a)",
+  "note": "Which radio antenna connector each Antenna Genius radio port is wired to (#4892): one radio-scoped feature document plus the pure token-to-live-name mapping. Antenna Genius accessory configuration, not radio-family wire.",
+  "split": "",
+  "confidence": "high"
+ },
  "core/NetRecurrence.h": {
   "tag": "ui-support",
   "note": "Pure RRULE math for net reminders; NetEntry is operator-scoped client state, so aligns with NetScheduler/NetEntry",
