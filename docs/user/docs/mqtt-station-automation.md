@@ -133,7 +133,7 @@ Published by AetherSDR:
 | `aethersdr/cw/decode` | **On** | CW decoder output, one JSON message per chunk: `text`, `rx` (`false` for the decoder watching your own transmitted CW), `freq`, and `pitch_hz` / `speed_wpm` when known. Published only while the CW decoder panel is showing decoded text. |
 | `aethersdr/radio/state` | Off | Radio state as JSON: `slice`, `freq`, `mode`, `tx`, `connected` (`false` on disconnect), and the RF `drive`, its ceiling `max_power_level` and `drive_confirmed`. Fields are present only when known, so key off whether a field exists, not on zero. |
 | `aethersdr/ax25/rx` | Off | Received AX.25 packet frames |
-| `aethersdr/spot/selected` | Off | Sent each time you click a spot on the panadapter (not a memory, EiBi or Signal History marker), as JSON: `call`, `freq` (MHz), and when known `mode`, `source`, `spotter`, `comment`, `time` (UTC), plus `bearing` (degrees, short path), `distance_km` and `approx` (`true` when the position is the country's center). The heading fields are left out when AetherSDR doesn't know the heading. Use it to have a station controller turn the right rotator or fill in its own "go to". |
+| `aethersdr/spot/selected` | Off | Sent each time you click a spot on the panadapter (not a memory, EiBi or Signal History marker), as JSON: `call`, `freq` (MHz), and when known `mode`, `source`, `spotter`, `comment`, `time` (UTC), plus `bearing` (degrees, short path), `distance_km`, `distance_mi` and `approx` (`true` when the position is the country's center). The heading fields are left out when AetherSDR doesn't know the heading. Use it to have a station controller turn the right rotator or fill in its own "go to". |
 
 Subscribed by AetherSDR:
 
