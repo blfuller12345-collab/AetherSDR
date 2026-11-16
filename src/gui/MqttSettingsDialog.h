@@ -4,6 +4,7 @@
 #include "core/MqttSettings.h"
 
 class QCheckBox;
+class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
@@ -47,6 +48,7 @@ private:
     QCheckBox* m_tlsCheck{nullptr};
     QLineEdit* m_caFileEdit{nullptr};
     QTableWidget* m_topicsTable{nullptr};
+    QComboBox*    m_overlayLayoutCombo{nullptr};
     QTableWidget* m_buttonsTable{nullptr};
     QPushButton*  m_addButtonRowBtn{nullptr};
 

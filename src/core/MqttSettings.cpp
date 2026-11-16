@@ -18,7 +18,9 @@ namespace {
 //     "user":     "username",
 //     "tls":      false,
 //     "caFile":   "/path/to/ca.pem",
-//     "topics":   [{"topic": "...", "displayOnPan": true|false}, ...],
+//     "topics":   [{"topic": "...", "displayOnPan": true|false,
+//                   "label": "..." (optional, #7136)}, ...],
+//     "panOverlayLayout": "single" | "stacked"   (optional, #7136),
 //     "buttons":  [{"label": "...", "topic": "...", "payload": "..."}, ...],
 //     "enabled":  false
 //   }
@@ -134,6 +136,9 @@ QJsonArray topicsToJsonArray(const QVector<MqttTopicDef>& topics)
         QJsonObject entry;
         entry.insert(QStringLiteral("topic"), topic);
         entry.insert(QStringLiteral("displayOnPan"), def.displayOnPan);
+        const QString label = def.label.trimmed();
+        if (!label.isEmpty())
+            entry.insert(QStringLiteral("label"), label);
         arr.append(entry);
     }
     return arr;
@@ -147,7 +152,9 @@ QVector<MqttTopicDef> topicsFromJsonArray(const QJsonArray& arr)
         const QJsonObject obj = v.toObject();
         const QString topic = obj.value(QStringLiteral("topic")).toString().trimmed();
         if (topic.isEmpty()) continue;
-        topics.append({topic, obj.value(QStringLiteral("displayOnPan")).toBool(false)});
+        topics.append({topic,
+                       obj.value(QStringLiteral("displayOnPan")).toBool(false),
+                       obj.value(QStringLiteral("label")).toString().trimmed()});
     }
     return topics;
 }
@@ -259,6 +266,47 @@ void saveMqttTopicConfig(const QVector<MqttTopicDef>& topics)
 {
     QJsonObject obj = mqttSettingsObject();
     obj.insert(QStringLiteral("topics"), topicsToJsonArray(topics));
+    saveMqttSettingsObject(obj);
+}
+
+QString mqttTopicsToJson(const QVector<MqttTopicDef>& topics)
+{
+    return QString::fromUtf8(
+        QJsonDocument(topicsToJsonArray(topics)).toJson(QJsonDocument::Compact));
+}
+
+QVector<MqttTopicDef> mqttTopicsFromJson(const QString& json)
+{
+    const QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (!doc.isArray())
+        return {};
+    return topicsFromJsonArray(doc.array());
+}
+
+QString mqttTopicDisplayLabel(const MqttTopicDef& def)
+{
+    const QString label = def.label.trimmed();
+    if (!label.isEmpty())
+        return label;
+    const QString topic = def.topic.trimmed();
+    const QString last = topic.section(QLatin1Char('/'), -1);
+    return last.isEmpty() ? topic : last;
+}
+
+MqttOverlayLayout loadMqttOverlayLayout()
+{
+    const QString value = mqttSettingsObject()
+        .value(QStringLiteral("panOverlayLayout")).toString();
+    return value == QLatin1String("stacked") ? MqttOverlayLayout::Stacked
+                                             : MqttOverlayLayout::SingleLine;
+}
+
+void saveMqttOverlayLayout(MqttOverlayLayout layout)
+{
+    QJsonObject obj = mqttSettingsObject();
+    obj.insert(QStringLiteral("panOverlayLayout"),
+               layout == MqttOverlayLayout::Stacked ? QStringLiteral("stacked")
+                                                    : QStringLiteral("single"));
     saveMqttSettingsObject(obj);
 }
 
