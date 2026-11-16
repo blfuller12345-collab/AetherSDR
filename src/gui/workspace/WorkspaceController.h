@@ -13,6 +13,7 @@
 // that ContainerManager::restoreState() normalises to panel at startup; this
 // controller re-places from the document.
 
+#include "gui/workspace/WorkspaceExchange.h"
 #include "gui/workspace/WorkspaceStore.h"
 
 #include <QByteArray>
@@ -233,6 +234,16 @@ public:
     void bindProfile(const QString& profileName, const QString& workspaceId);
     void unbindProfile(const QString& profileName);
     QString boundWorkspaceFor(const QString& profileName) const;
+
+    // Export / import (#5276). exportWorkspaces() writes the given workspaces
+    // (in the operator's order) as an .aetherws file's bytes; empty when none
+    // matched. importWorkspaces() merges a parsed file into the document
+    // (WorkspaceExchange::merge rules), persists it, re-places the active
+    // workspace if the import replaced it, and announces the change.
+    // Applets this install doesn't build are filled in from the catalog.
+    QByteArray exportWorkspaces(const QStringList& workspaceIds) const;
+    WorkspaceExchange::MergeReport importWorkspaces(
+        const WorkspaceDocument& incoming, WorkspaceExchange::MergeOptions options);
 
     // The widget palette (phase 6 field request): the context menu's
     // "Add widget" submenu, fed by MainWindow from AppletPanel's catalog.
