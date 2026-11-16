@@ -7307,6 +7307,15 @@ add_executable(esc_auto_sweep_test
 target_include_directories(esc_auto_sweep_test PRIVATE src)
 target_link_libraries(esc_auto_sweep_test PRIVATE Qt6::Core)
 add_test(NAME esc_auto_sweep_test COMMAND esc_auto_sweep_test)
+# Rotators applet: GS-232A / rotctld commands and replies, stored list.
+add_executable(rotator_protocol_test
+    tests/rotator_protocol_test.cpp
+    src/core/RotatorProtocol.cpp
+    $<TARGET_OBJECTS:aether_test_settings>
+)
+target_include_directories(rotator_protocol_test PRIVATE src)
+target_link_libraries(rotator_protocol_test PRIVATE Qt6::Core)
+add_test(NAME rotator_protocol_test COMMAND rotator_protocol_test)
 
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
@@ -11822,6 +11831,7 @@ set(AETHER_SETTINGS_CONSUMERS
     antenna_alias_test
     mqtt_settings_test
     antenna_genius_port_map_test
+    rotator_protocol_test
     mqtt_radio_state_test
     ax25_libmodem_shim_test
     ax25_replay

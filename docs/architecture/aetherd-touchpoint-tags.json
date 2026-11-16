@@ -569,6 +569,18 @@
   "split": "",
   "confidence": "high"
  },
+ "core/RotatorClient.h": {
+  "tag": "peripheral(rotator)",
+  "note": "One station rotator controller over TCP (GS-232A, e.g. microHAM ARCO; Hamlib rotctld): connection, heading poll, turn and stop. A standalone accessory addressed by host and port, independent of the radio, not behind the IRadioBackend seam.",
+  "split": "",
+  "confidence": "high"
+ },
+ "core/RotatorProtocol.h": {
+  "tag": "peripheral(rotator)",
+  "note": "GS-232A and rotctld commands and reply parsing, and the station's stored rotator list (one AppSettings key). Pure, widget-free; rotator accessory protocol, not radio-family wire.",
+  "split": "",
+  "confidence": "high"
+ },
  "core/NetRecurrence.h": {
   "tag": "ui-support",
   "note": "Pure RRULE math for net reminders; NetEntry is operator-scoped client state, so aligns with NetScheduler/NetEntry",

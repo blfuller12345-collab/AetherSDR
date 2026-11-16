@@ -29,6 +29,7 @@
 #include "Ax25HfPacketDecodeDialog.h"
 #include "AccessoryPanelWidgets.h"   // kRelayMeterFreshnessMs
 #include "AppletPanel.h"
+#include "RotatorApplet.h"
 #include "DbmRangeTransition.h"
 #include "MainWindowHelpers.h"
 #include "OwnedSingleShotTimer.h"
@@ -4619,6 +4620,16 @@ void MainWindow::wirePanadapter(PanadapterApplet* applet)
             Qt::UniqueConnection);
     connect(sw, &SpectrumWidget::tnfPermanentRequested, tnf, &TnfModel::setTnfPermanent,
             Qt::UniqueConnection);
+
+    // ── Rotators: "Turn beam to …" on a spot ────────────────────────────
+    if (RotatorApplet* rot = m_appletPanel ? m_appletPanel->rotatorApplet() : nullptr) {
+        sw->setBeamTurnTargets(rot->rotatorTargets());
+        connect(rot, &RotatorApplet::rotatorsChanged, sw, [swGuard, rot] {
+            if (swGuard) swGuard->setBeamTurnTargets(rot->rotatorTargets());
+        });
+        connect(sw, &SpectrumWidget::beamTurnRequested, rot,
+                &RotatorApplet::turnRotator, Qt::UniqueConnection);
+    }
 
     // ── Spot markers ─────────────────────────────────────────────────────
     auto* spots = &m_radioModel.spotModel();

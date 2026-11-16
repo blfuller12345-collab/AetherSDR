@@ -1105,6 +1105,8 @@ set(CORE_SOURCES
     src/core/MqttRadioState.cpp
     src/core/MqttSettings.cpp
     src/core/AntennaGeniusPortMap.cpp
+    src/core/RotatorProtocol.cpp
+    src/core/RotatorClient.cpp
     src/core/AutomationBridgeSettings.cpp
     src/core/SpotCommandPolicy.cpp
     src/core/SpotModeResolver.cpp
@@ -1621,6 +1623,7 @@ set(GUI_SOURCES
     src/gui/AntennaGeniusNameBridge.cpp
     src/gui/ShackSwitchApplet.cpp
     src/gui/GreenHeronApplet.cpp
+    src/gui/RotatorApplet.cpp
     src/gui/TitleBar.cpp
     src/gui/RoundedMenu.cpp
     src/gui/StatusIndicator.cpp

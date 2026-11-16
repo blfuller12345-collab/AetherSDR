@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 290 touchpoint headers (235 core, 55 models) — 290/290 tagged, 0/290 converted.
+**Totals:** 292 touchpoint headers (237 core, 55 models) — 292/292 tagged, 0/292 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -144,6 +144,8 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/RemoteSession.h` | 1 | universal — isRemoteRadioSession(): whether a session is remote (WAN, routed, or a radio at a tailnet address), shared by the connection panel and RadioModel for the Radio Setup IP gate, network-quality thresholds, NTP gate, discovery socket and low-bandwidth default. Reads only RadioInfo's core-profile address and isRouted; no protocol message, no vendor ties. | unconverted |
 | `core/RfkitConnection.h` | 3 | peripheral(rfkit) — Direct HTTP/JSON REST client (default port 8080) for the RF-KIT amplifier — a standalone Ethernet accessory with no FlexRadio awareness at all, same precedent as core/AcomConnection.h, core/SpeConnection.h, core/VkampConnection.h and core/Kpa1500Connection.h. The Flex radio neither discovers it nor proxies its telemetry, so its REST API is the only control channel. Not radio-family wire; a peripheral accessory, NOT behind the IRadioBackend radio seam. See docs/architecture/rfkit-amplifier-design.md. | unconverted |
 | `core/RfkitProtocol.h` | 1 | peripheral(rfkit) — Wire codec for the RF-KIT peripheral: JSON parsers for each REST endpoint (power, data, tuner, antennas, operate mode, operational interface, info), the request-body builders, and the per-field optional Status snapshot. Derived from the vendor's public RFKIT API documentation (OpenAPI 0.9.0), a clean-room input (Constitution Principle IV). Peripheral accessory wire, NOT behind the IRadioBackend radio seam. | unconverted |
+| `core/RotatorClient.h` | 1 | peripheral(rotator) — One station rotator controller over TCP (GS-232A, e.g. microHAM ARCO; Hamlib rotctld): connection, heading poll, turn and stop. A standalone accessory addressed by host and port, independent of the radio, not behind the IRadioBackend seam. | unconverted |
+| `core/RotatorProtocol.h` | 1 | peripheral(rotator) — GS-232A and rotctld commands and reply parsing, and the station's stored rotator list (one AppSettings key). Pure, widget-free; rotator accessory protocol, not radio-family wire. | unconverted |
 | `core/RtlSdrDiscovery.h` | 1 | vendor(rtl) — RTL-SDR USB device discovery that emits the shared RadioInfo shape. Family-specific discovery belongs below the RTL backend seam. | unconverted |
 | `core/RttyDecoder.h` | 1 | universal — Radio-agnostic RTTY (Baudot) DSP decoder over generic 24 kHz PCM; engine-side digital-mode decode feature. | unconverted |
 | `core/SerialPortController.h` | 2 | ui-support — USB-serial DTR/RTS PTT + CTS/DSR/DCD key/paddle input; local hardware I/O device, emits intent only | unconverted |
@@ -176,7 +178,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/TailnetShimTokenStore.h` | 2 | peripheral(tailnet-shim) — OS-keychain storage of the tailnet shim's admin token, keyed by the Flex chassis serial (RFC #6271). Not SmartSDR wire: AetherSDR's own HTTP API to a separate service (the shim) that happens to run in the radio's container runtime, so a direct-transport peripheral, NOT behind the IRadioBackend radio seam (same shape as core/PgxlConnection.h). | unconverted |
 | `core/TciServer.h` | 3 | mixed(flex) — TCI WebSocket server for WSJT-X et al: protocol surface is canonical radio state, but audio/IQ rides Flex DAX | unconverted |
 | `core/TgxlConnection.h` | 3 | peripheral(4o3a) — Direct TCP client for the 4O3A Tuner Genius XL (port 9010, relay/autotune), reverse-engineered from the 4O3A management app — a standalone accessory transport, not SmartSDR. Not radio-family wire; a peripheral accessory, NOT behind the IRadioBackend radio seam (reclassified from vendor(flex), #4087 follow-up). | unconverted |
-| `core/ThemeManager.h` | 192 | ui-support — Qt token-based theming singleton (colors/fonts/QSS, theme files, editor hooks) — pure client GUI plumbing, no radio state. | unconverted |
+| `core/ThemeManager.h` | 193 | ui-support — Qt token-based theming singleton (colors/fonts/QSS, theme files, editor hooks) — pure client GUI plumbing, no radio state. | unconverted |
 | `core/ThreadCpuRing.h` | 2 | ui-support — Short host-thread CPU history used by Runtime Monitor peak and sparkline presentation. Diagnostic UI support, not radio state. | unconverted |
 | `core/TimeFrameVoter.h` | 1 | universal — Shared AetherClock time-frame types plus confidence-weighted cross-frame bit voting over a sliding window. Map-agnostic pure DSP/logic — no Qt, no GUI, no vendor ties. | unconverted |
 | `core/TxKeyingMarker.h` | 16 | ui-support — QWidget property marker guarding TX-keying controls from the automation bridge; GUI-shell plumbing, no radio state. | unconverted |
