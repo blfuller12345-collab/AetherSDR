@@ -3551,6 +3551,17 @@ target_include_directories(workspace_document_test PRIVATE src)
 target_link_libraries(workspace_document_test PRIVATE Qt6::Core)
 add_test(NAME workspace_document_test COMMAND workspace_document_test)
 
+# Workspace export / import (#5276): the .aetherws format and merge rules.
+add_executable(workspace_exchange_test
+    tests/workspace_exchange_test.cpp
+    src/gui/workspace/WorkspaceExchange.cpp
+    src/gui/workspace/WorkspaceDocument.cpp
+    src/gui/workspace/WorkspaceGeometry.cpp
+)
+target_include_directories(workspace_exchange_test PRIVATE src)
+target_link_libraries(workspace_exchange_test PRIVATE Qt6::Core)
+add_test(NAME workspace_exchange_test COMMAND workspace_exchange_test)
+
 # Workspace canvas (RFC #4887) phase 2 — Classic geometry and the one-way
 # migration off the legacy layout keys, against a real AppSettings in a
 # temporary home.  Pins that every pan layout id tiles the surface exactly, and
@@ -3639,6 +3650,7 @@ add_executable(workspace_controller_test
     src/gui/workspace/ClassicLayout.cpp
     src/gui/workspace/WorkspaceCanvas.cpp
     src/gui/workspace/WorkspaceController.cpp
+    src/gui/workspace/WorkspaceExchange.cpp
     src/gui/workspace/WorkspaceDocument.cpp
     src/gui/workspace/WorkspaceGeometry.cpp
     src/gui/workspace/WorkspaceMigration.cpp

@@ -9,6 +9,8 @@
 
 #include "core/ThemeManager.h"
 
+#include <QDateTime>
+#include <QCoreApplication>
 #include <QHash>
 #include <QMenu>
 #include <QTimer>
@@ -2536,6 +2538,43 @@ bool WorkspaceController::deleteWorkspace(const QString& id)
     }
     emit workspacesChanged();
     return true;
+}
+
+QByteArray WorkspaceController::exportWorkspaces(const QStringList& workspaceIds) const
+{
+    return WorkspaceExchange::exportWorkspaces(
+        m_store.document(), workspaceIds,
+        QCoreApplication::applicationVersion(),
+        QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
+}
+
+WorkspaceExchange::MergeReport WorkspaceController::importWorkspaces(
+    const WorkspaceDocument& incoming, WorkspaceExchange::MergeOptions options)
+{
+    if (options.knownAppletIds.isEmpty()) {
+        options.knownAppletIds = effectiveKnownAppletIds();
+    }
+    WorkspaceDocument doc = m_store.document();
+    const WorkspaceExchange::MergeReport report =
+        WorkspaceExchange::merge(doc, incoming, options);
+    if (!report.changed()) {
+        return report;
+    }
+    // Was the active workspace replaced under the operator's feet?  Then
+    // re-place it from the new arrangement, the same forced switch a
+    // delete uses; otherwise just persist.
+    bool activeReplaced = false;
+    if (const Workspace* active = doc.workspace(doc.activeWorkspace)) {
+        activeReplaced = report.replaced.contains(active->label);
+    }
+    m_store.setDocument(doc);
+    if (activeReplaced && m_enabled) {
+        switchWorkspaceInternal(doc.activeWorkspace, /*force=*/true);
+    } else if (!m_store.flush()) {
+        qWarning() << "WorkspaceController: workspace import did not persist (read-only session?)";
+    }
+    emit workspacesChanged();
+    return report;
 }
 
 bool WorkspaceController::switchWorkspace(const QString& id)

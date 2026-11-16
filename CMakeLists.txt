@@ -1575,6 +1575,7 @@ set(GUI_SOURCES
     src/gui/workspace/WorkspaceCanvas.cpp
     src/gui/workspace/WorkspaceController.cpp
     src/gui/workspace/WorkspaceDocument.cpp
+    src/gui/workspace/WorkspaceExchange.cpp
     src/gui/workspace/WorkspaceGeometry.cpp
     src/gui/workspace/WorkspaceMigration.cpp
     src/gui/workspace/WorkspaceStore.cpp

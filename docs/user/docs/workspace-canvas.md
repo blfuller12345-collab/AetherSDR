@@ -55,10 +55,29 @@ Positions are stored as fractions of the canvas, so a layout made on a 3840 × 1
 | **New blank…** | Starts with an empty canvas. |
 | **Rename active…** | Renames the current workspace. |
 | **Delete active…** | Deletes it after confirmation ("Its arrangement is lost"). |
+| **Export active…** | Saves the current workspace to an `.aetherws` file. |
+| **Export all…** | Saves every workspace to one `.aetherws` file. |
+| **Import…** | Adds the workspaces from an `.aetherws` file. See [Moving workspaces to another computer](#moving-workspaces-to-another-computer). |
 | **Import pop-outs onto canvas** | Docks every floating applet window and floating panadapter onto the canvas, at positions mapped from where the windows were. |
 | **Bind to radio profile ▸** | Links this workspace to a global radio profile, so recalling that profile switches to the workspace. See [Profile Management](./profile-management.md). |
 
 With the canvas off, the submenu just says "Enable the canvas to create workspaces".
+
+### Moving workspaces to another computer
+
+Export a workspace on one computer and import it on another, for example from the shack PC to the laptop you operate remotely from. The file is plain text (JSON) with the `.aetherws` extension; copy it across any way you like.
+
+1. On the first computer, choose **View → Workspace Canvas → Workspaces → Export active…** (or **Export all…**) and save the file.
+2. On the second computer, turn the canvas on, then choose **View → Workspace Canvas → Workspaces → Import…** and pick the file.
+3. AetherSDR lists the workspaces in the file and asks before importing.
+
+- **Same name already here:** for each one, choose **Rename** (keeps both; the import gets a number, like "Contest (2)"), **Replace** (overwrites yours) or **Skip**. Nothing is overwritten unless you choose Replace.
+- **Screen size:** positions are stored as fractions of the canvas, so a layout made on a large monitor comes back in proportion on a smaller one. Items that would hang off the canvas are pulled back on.
+- **Extra canvas windows:** on a computer with one screen, they are folded into the main canvas.
+- **Missing applets:** an applet this version of AetherSDR doesn't have is left out, and the summary names it.
+- **Radio profile bindings** come across only for profiles this computer already has, and never replace a binding you have here. The summary lists any that didn't.
+
+The file holds only the arrangement: no passwords, keys, audio devices, file paths or window positions, so it is safe to share.
 
 ### Canvas windows
 

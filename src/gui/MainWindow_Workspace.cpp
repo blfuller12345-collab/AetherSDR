@@ -18,9 +18,20 @@
 #include "workspace/ClassicLayout.h"
 #include "workspace/WorkspaceCanvas.h"
 #include "workspace/WorkspaceController.h"
+#include "workspace/WorkspaceExchange.h"
 #include "workspace/WorkspaceWindow.h"
 
 #include <QAction>
+#include <QStatusBar>
+#include <QStandardPaths>
+#include <QScreen>
+#include <QSaveFile>
+#include <QPushButton>
+#include <QGuiApplication>
+#include <QFileInfo>
+#include <QFileDialog>
+#include <QFile>
+#include <QDir>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
@@ -603,6 +614,27 @@ void MainWindow::rebuildWorkspaceSwitcherMenu(QMenu* menu)
         }
     });
     del->setEnabled(list.size() > 1);
+
+    // Export / import (#5276): portable .aetherws files, e.g. shack PC to
+    // laptop. Active is resolved at trigger time, like Rename/Delete.
+    menu->addSeparator();
+    menu->addAction(tr("Export active…"), this, [this] {
+        const QString now = m_workspaceController->activeWorkspaceId();
+        QString nowLabel;
+        for (const auto& [wid, wlabel] : m_workspaceController->workspaceList()) {
+            if (wid == now) { nowLabel = wlabel; break; }
+        }
+        exportWorkspacesToFile({now}, WorkspaceExchange::suggestedFileName(nowLabel));
+    });
+    menu->addAction(tr("Export all…"), this, [this] {
+        QStringList ids;
+        for (const auto& [wid, wlabel] : m_workspaceController->workspaceList()) {
+            Q_UNUSED(wlabel);
+            ids.append(wid);
+        }
+        exportWorkspacesToFile(ids, WorkspaceExchange::suggestedFileName(tr("Workspaces")));
+    });
+    menu->addAction(tr("Import…"), this, [this] { importWorkspacesFromFile(); });
 
     menu->addSeparator();
     menu->addAction(tr("Import pop-outs onto canvas"), this, [this] {
@@ -1252,6 +1284,165 @@ void MainWindow::setBandStackPanelVisible(bool show)
     if (m_panStack) {
         m_panStack->setBandStackVisible(show);
     }
+}
+
+
+// ── Workspace export / import (#5276) ────────────────────────────────────
+
+void MainWindow::exportWorkspacesToFile(const QStringList& workspaceIds,
+                                        const QString& suggestedName)
+{
+    if (!m_workspaceController) {
+        return;
+    }
+    const QByteArray bytes = m_workspaceController->exportWorkspaces(workspaceIds);
+    if (bytes.isEmpty()) {
+        statusBar()->showMessage(tr("No workspace to export"), 5000);
+        return;
+    }
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Export workspace"),
+        QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation))
+            .filePath(suggestedName),
+        tr("AetherSDR workspaces (*.%1)").arg(WorkspaceExchange::kFileSuffix));
+    if (path.isEmpty()) {
+        return;
+    }
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size()
+        || !file.commit()) {
+        QMessageBox::warning(this, tr("Export workspace"),
+                             tr("Could not write \"%1\": %2")
+                                 .arg(QDir::toNativeSeparators(path), file.errorString()));
+        return;
+    }
+    statusBar()->showMessage(
+        tr("%n workspace(s) exported to %1", nullptr, int(workspaceIds.size()))
+            .arg(QFileInfo(path).fileName()),
+        6000);
+}
+
+void MainWindow::importWorkspacesFromFile()
+{
+    if (!m_workspaceController) {
+        return;
+    }
+    const QString path = QFileDialog::getOpenFileName(
+        this, tr("Import workspace"),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+        tr("AetherSDR workspaces (*.%1);;All files (*)").arg(WorkspaceExchange::kFileSuffix));
+    if (path.isEmpty()) {
+        return;
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, tr("Import workspace"),
+                             tr("Could not open \"%1\": %2")
+                                 .arg(QDir::toNativeSeparators(path), file.errorString()));
+        return;
+    }
+    // A workspace file is a few kilobytes; refuse anything absurd before
+    // parsing (Principle VII: the file is untrusted input).
+    constexpr qint64 kMaxBytes = 4 * 1024 * 1024;
+    if (file.size() > kMaxBytes) {
+        QMessageBox::warning(this, tr("Import workspace"),
+                             tr("\"%1\" is too large to be a workspace file.")
+                                 .arg(QFileInfo(path).fileName()));
+        return;
+    }
+    WorkspaceDocument incoming;
+    QString writer, error;
+    QStringList warnings;
+    if (!WorkspaceExchange::parse(file.readAll(), &incoming, &writer, &error, &warnings)) {
+        QMessageBox::warning(this, tr("Import workspace"),
+                             tr("Could not import \"%1\": %2.")
+                                 .arg(QFileInfo(path).fileName(), error));
+        return;
+    }
+
+    // Preview: what is in the file, before anything changes.
+    const bool singleScreen = QGuiApplication::screens().size() <= 1;
+    QStringList lines;
+    bool hasExtraWindows = false;
+    for (const Workspace& ws : incoming.workspaces) {
+        int applets = 0;
+        for (const WorkspaceSurface& surf : ws.surfaces) {
+            for (const CanvasItem& it : surf.items) {
+                if (it.id.startsWith(QStringLiteral("applet:"))) ++applets;
+            }
+        }
+        hasExtraWindows |= ws.surfaces.size() > 1;
+        lines << (ws.surfaces.size() > 1
+                      ? tr("• %1 — %n applet(s), %2 canvas windows", nullptr, applets)
+                            .arg(ws.label).arg(ws.surfaces.size())
+                      : tr("• %1 — %n applet(s)", nullptr, applets).arg(ws.label));
+    }
+    QString preview = tr("This file has %n workspace(s):", nullptr, int(incoming.workspaces.size()))
+                      + QStringLiteral("\n") + lines.join(QLatin1Char('\n'));
+    if (!writer.isEmpty()) {
+        preview += QStringLiteral("\n\n") + tr("Exported from AetherSDR %1.").arg(writer);
+    }
+    if (hasExtraWindows && singleScreen) {
+        preview += QStringLiteral("\n\n")
+                   + tr("This computer has one screen, so extra canvas windows "
+                        "will be folded into the main canvas.");
+    }
+    if (!warnings.isEmpty()) {
+        preview += QStringLiteral("\n\n") + tr("Repaired while reading: %1")
+                                               .arg(warnings.join(QStringLiteral("; ")));
+    }
+    if (QMessageBox::question(this, tr("Import workspace"),
+                              preview + QStringLiteral("\n\n") + tr("Import?"))
+        != QMessageBox::Yes) {
+        return;
+    }
+
+    WorkspaceExchange::MergeOptions options;
+    options.knownProfiles = m_radioModel.globalProfiles();
+    options.foldExtraSurfaces = singleScreen;
+    options.onConflict = [this](const QString& label) {
+        QMessageBox box(this);
+        box.setWindowTitle(tr("Import workspace"));
+        box.setText(tr("A workspace named \"%1\" already exists.").arg(label));
+        box.setInformativeText(tr("Replace overwrites its arrangement. Rename keeps "
+                                  "both. Skip leaves yours as it is."));
+        QPushButton* rename = box.addButton(tr("Rename"), QMessageBox::AcceptRole);
+        QPushButton* replace = box.addButton(tr("Replace"), QMessageBox::DestructiveRole);
+        box.addButton(tr("Skip"), QMessageBox::RejectRole);
+        box.setDefaultButton(rename);
+        box.exec();
+        if (box.clickedButton() == replace) return WorkspaceExchange::Conflict::Replace;
+        if (box.clickedButton() == rename)  return WorkspaceExchange::Conflict::Rename;
+        return WorkspaceExchange::Conflict::Skip;
+    };
+    const WorkspaceExchange::MergeReport report =
+        m_workspaceController->importWorkspaces(incoming, options);
+
+    // Summary: exactly what happened, including what was left out.
+    QStringList summary;
+    if (!report.added.isEmpty())
+        summary << tr("Added: %1").arg(report.added.join(QStringLiteral(", ")));
+    if (!report.replaced.isEmpty())
+        summary << tr("Replaced: %1").arg(report.replaced.join(QStringLiteral(", ")));
+    if (!report.skipped.isEmpty())
+        summary << tr("Skipped: %1").arg(report.skipped.join(QStringLiteral(", ")));
+    if (!report.droppedApplets.isEmpty())
+        summary << tr("%n applet(s) this version doesn't have were left out: %1",
+                      nullptr, int(report.droppedApplets.size()))
+                       .arg(report.droppedApplets.join(QStringLiteral(", ")));
+    if (!report.unboundProfiles.isEmpty())
+        summary << tr("Not bound, because this computer has no radio profile named: %1")
+                       .arg(report.unboundProfiles.join(QStringLiteral(", ")));
+    if (!report.keptBindings.isEmpty())
+        summary << tr("Kept your existing binding for: %1")
+                       .arg(report.keptBindings.join(QStringLiteral(", ")));
+    if (report.foldedSurfaces > 0)
+        summary << tr("%n extra canvas window(s) folded into the main canvas.",
+                      nullptr, report.foldedSurfaces);
+    if (summary.isEmpty())
+        summary << tr("Nothing was imported.");
+    QMessageBox::information(this, tr("Import workspace"),
+                             summary.join(QStringLiteral("\n\n")));
 }
 
 }  // namespace AetherSDR
