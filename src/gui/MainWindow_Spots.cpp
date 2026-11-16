@@ -9,6 +9,7 @@
 #include "MainWindowHelpers.h"
 #include "PanadapterApplet.h"
 #include "PanadapterStack.h"
+#include "RotorHeadingFeed.h"
 #include "SpectrumWidget.h"
 #include "core/N1MMSpotClient.h"
 #include "core/WsprAgentClient.h"
@@ -169,6 +170,16 @@ void MainWindow::wireSpotSubsystem()
         m_cwxTransmitting = false;
         m_cwxPublishedTxTrue = false;
         publishRadioStateMqtt();
+    });
+
+    // aethersdr/rotor/heading → Auto ESC heading memory. The station
+    // controller that owns the rotator reports where the beam points; the
+    // VFO flags recall or re-tune ESC when it stops (#6589 follow-up).
+    connect(m_mqttClient, &MqttClient::messageReceived,
+            this, [](const QString& topic, const QByteArray& payload) {
+        if (topic != QString::fromLatin1(kRotorHeadingTopic)) return;
+        if (!isMqttTopicEnabled(QString::fromLatin1(kRotorHeadingTopic))) return;
+        RotorHeadingFeed::instance().handlePayload(payload);
     });
 
     // aethersdr/cw/transmit → CWX keyer.

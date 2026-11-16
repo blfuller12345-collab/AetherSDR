@@ -614,6 +614,9 @@ private:
     void onEscSweepTimer();
     void updateEscAutoAvailability();
     void showEscAutoMenu(const QPoint& globalPos);
+    // Auto ESC heading memory: recall (or auto-tune) when the beam stops.
+    void onRotorHeadingSettled(int headingDeg);
+    void setEscAutoStatus(const QString& text);
     bool         m_diversityAllowed{true};
     bool         m_escControlsAvailable{true};
     void syncEscPanelVisibility();

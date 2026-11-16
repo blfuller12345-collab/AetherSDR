@@ -290,6 +290,8 @@ const QVector<InternalMqttTopicDef>& internalMqttSubscribeTopicDefs()
           QStringLiteral("CW keyer input"),           true  },
         { QString(kAx25TxTopic),
           QStringLiteral("AX.25 transmit"),           true  },
+        { QString(kRotorHeadingTopic),
+          QStringLiteral("Beam heading (Auto ESC remembers settings per heading)"), true },
     };
     return defs;
 }

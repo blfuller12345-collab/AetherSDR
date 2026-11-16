@@ -1615,6 +1615,8 @@ set(GUI_SOURCES
     src/gui/MeterSlider.cpp
     src/gui/PhaseKnob.cpp
     src/gui/EscAutoSweep.cpp
+    src/gui/EscHeadingMemory.cpp
+    src/gui/RotorHeadingFeed.cpp
     src/gui/AntennaGeniusApplet.cpp
     src/gui/ShackSwitchApplet.cpp
     src/gui/GreenHeronApplet.cpp

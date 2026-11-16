@@ -104,6 +104,21 @@ The **A** button at the end of the phase row finds a setting for you. Click it a
 - If nothing beats the starting setting, the sliders stay where they were.
 - **A** is dimmed until **ESC** is on.
 
+#### Remembering settings per beam heading
+
+The best ESC setting depends on the direction the signal comes from, so when you turn a beam that is one of the diversity antennas, the old setting stops fitting. If a station controller (Node-RED, a rotator program, a script) publishes where the beam points, AetherSDR remembers the Auto ESC result for each heading and puts it back when the beam stops there.
+
+1. Have the controller publish the heading on MQTT topic `aethersdr/rotor/heading`, either as a bare number of degrees (`135`) or as JSON: `{"heading":135,"band":"2m","rotor":"south"}`. `band` is optional and limits it to slices on that band, which matters when the beam is for one band only. Publishing it retained lets AetherSDR pick it up when it starts.
+2. In **Settings → MQTT → Subscriptions**, tick **Beam heading** under Internal AetherSDR Topics.
+3. Point the beam, then press **A** (with **Strongest signal** chosen). The result line ends with *saved for 130°*. Settings are kept per band in 10° steps, so 125° to 134° share one.
+
+When the beam has stopped on a heading (it must hold still for about 7 seconds, so a rotor that is only being polled slowly doesn't look stopped), each slice with ESC on and on that band:
+
+- puts back the saved phase and gain, if there is one: *ESC recalled for 130° (40°, 1.10)*;
+- otherwise says *New heading 130°: press A to tune and save it*, or, with **Auto-tune when the beam stops on a new heading** ticked in the right-click menu, runs the sweep by itself and saves the result.
+
+The right-click menu also shows the current heading and how many headings are saved for the band, and has **Forget saved headings** for the band. A recalled setting is the best one found under the conditions at the time; if a signal sounds off, press **A** again to refresh it. AetherSDR never talks to the rotator itself.
+
 ### Finding the Best Null
 
 1. Enable DIV and ESC
