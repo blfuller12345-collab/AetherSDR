@@ -10599,6 +10599,44 @@ void SpectrumWidget::mousePressEvent(QMouseEvent* ev)
             actions.remove = [this](int id) { emit spotRemoveRequested(id); };
             SpotLabelPolicy::addSpotLabelActions(menu, this, hit.menu, hit.spotId,
                                                  hit.callsign, hit.freqMhz, actions);
+
+            // Turn a rotator to the spot (Rotators applet). The bearing is the
+            // one the hover tooltip shows (#6603); without it there is
+            // nothing to aim at, so the entry is dimmed with the reason.
+            if (!m_beamTurnTargets.isEmpty() && !hit.callsign.isEmpty()) {
+                const SpotMarker* marker = nullptr;
+                for (const SpotMarker& sm : m_spotMarkers) {
+                    if (sm.callsign == hit.callsign
+                        && std::abs(sm.freqMhz - hit.freqMhz) < 1e-6) {
+                        marker = &sm;
+                        break;
+                    }
+                }
+                menu.addSeparator();
+                if (marker && marker->bearingDeg >= 0.0) {
+                    const int bearing =
+                        static_cast<int>(std::lround(marker->bearingDeg)) % 360;
+                    QMenu* turn = menu.addMenu(
+                        QStringLiteral("Turn beam to %1\u00B0")
+                            .arg(bearing, 3, 10, QLatin1Char('0')));
+                    const QString call = hit.callsign;
+                    for (const auto& [rotId, rotName] : m_beamTurnTargets) {
+                        QString label = rotName;
+                        label.replace(QLatin1Char('&'), QStringLiteral("&&"));
+                        turn->addAction(label, this, [this, rotId, bearing, call] {
+                            emit beamTurnRequested(rotId, bearing, call);
+                        });
+                    }
+                } else {
+                    QAction* none = menu.addAction(QStringLiteral("Turn beam to spot"));
+                    none->setEnabled(false);
+                    const QString why = QStringLiteral(
+                        "No heading for this spot: AetherSDR needs your own position "
+                        "(GPS or your QRZ record) and the spotted call's.");
+                    none->setToolTip(why);
+                    none->setStatusTip(why);
+                }
+            }
         }
         // TNF context menu (when clicking on a TNF marker)
         else if (hitTnf >= 0) {

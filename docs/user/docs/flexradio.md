@@ -99,6 +99,7 @@ Follow these pages in order the first time:
 - [Peripherals](./peripherals.md) — PGXL amplifier, Antenna Genius and other accessories, with 4O3A access codes
 - [Amplifiers](./amplifiers.md) — ACOM, SPE Expert, VK3AMP, KPA1500 and RF-KIT amplifiers
 - [ShackSwitch](./shackswitch.md) and [Green Heron Everyware](./green-heron-everyware.md) — antenna switches and rotators
+- [Rotators](./rotators.md) — rotators over the network (microHAM ARCO, GS-232A, rotctld)
 
 ### Controllers
 

@@ -46,6 +46,7 @@
 #include "AntennaGeniusApplet.h"
 #include "ShackSwitchApplet.h"
 #include "GreenHeronApplet.h"
+#include "RotatorApplet.h"
 #include "MeterApplet.h"
 #include "ProfileSwitcherApplet.h"
 #include "HealthApplet.h"
@@ -169,7 +170,7 @@ constexpr int kStackBottomMargin = 8;
 } // namespace
 
 const QStringList AppletPanel::kDefaultOrder = {
-    "PWR", "RX", "WFM", "BAND", "TUN", "AMP", "TX", "PS", "PHNE", "P/CW", "EQ", "WAVE", "TXDSP", "CAT", "DAX", "TCI", "IQ", "MTR", "PROF", "KSDR", "HLTH", "AG", "SS", "GHE", "CLOCK"
+    "PWR", "RX", "WFM", "BAND", "TUN", "AMP", "TX", "PS", "PHNE", "P/CW", "EQ", "WAVE", "TXDSP", "CAT", "DAX", "TCI", "IQ", "MTR", "PROF", "KSDR", "HLTH", "AG", "SS", "GHE", "ROT", "CLOCK"
 };
 
 // ── Drop-aware scroll area ──────────────────────────────────────────────────
@@ -1209,6 +1210,12 @@ AppletPanel::AppletPanel(QWidget* parent) : QWidget(parent)
         m_appletOrder.append(gheEntry);
     }
 
+    // Rotators over TCP (GS-232A, e.g. microHAM ARCO; Hamlib rotctld). Like
+    // GHE: no discovery, configured in the tile, so always in the bar.
+    m_rotatorApplet = new RotatorApplet;
+    m_appletOrder.append(makeEntry("ROT", "Rotators", m_rotatorApplet,
+                                   false, m_drawer, m_drawerLayout));
+
 #ifdef HAVE_MQTT
     m_mqttApplet = new MqttApplet;
     m_appletOrder.append(makeEntry("MQTT", "MQTT", m_mqttApplet, false, m_drawer, m_drawerLayout));
@@ -1520,6 +1527,7 @@ QList<AppletPanel::AppletCatalogEntry> AppletPanel::appletCatalog() const
         {QStringLiteral("AG"),    QStringLiteral("Antennas & Switching")},
         {QStringLiteral("SS"),    QStringLiteral("Antennas & Switching")},
         {QStringLiteral("GHE"),   QStringLiteral("Antennas & Switching")},
+        {QStringLiteral("ROT"),   QStringLiteral("Antennas & Switching")},
         {QStringLiteral("CAT"),   QStringLiteral("Integration")},
         {QStringLiteral("DAX"),   QStringLiteral("Integration")},
         {QStringLiteral("IQ"),    QStringLiteral("Integration")},

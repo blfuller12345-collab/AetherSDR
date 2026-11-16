@@ -959,6 +959,12 @@ public:
         bool   distanceApprox{false};
     };
     void setSpotMarkers(const QVector<SpotMarker>& markers);
+    // Rotators the spot right-click menu offers under "Turn beam to …"
+    // (id, name), from the Rotators applet. Empty = no menu entry.
+    void setBeamTurnTargets(const QList<QPair<QString, QString>>& targets)
+    {
+        m_beamTurnTargets = targets;
+    }
 
     // Live WSJT-X Rx/Tx frequency overlay (#4526). One entry per WSJT-X
     // instance currently reporting Status — MainWindow expires an instance's
@@ -1146,6 +1152,10 @@ signals:
                           const QString& comment, int lifetimeSec,
                           bool forwardToCluster);
     void spotRemoveRequested(int spotIndex);
+    // "Turn beam to …" on a spot: turn this rotator to the spot's short-path
+    // bearing from the operator.
+    void beamTurnRequested(const QString& rotatorId, int bearingDeg,
+                           const QString& callsign);
 
 protected:
 #ifdef AETHER_GPU_SPECTRUM
@@ -2167,6 +2177,8 @@ private:
 
     // MQTT device status overlay
     QMap<QString, QString> m_mqttDisplayValues;
+
+    QList<QPair<QString, QString>> m_beamTurnTargets;   // setBeamTurnTargets()
 
     int     m_topInset{0};   // setTopInset()
     int     m_topRightReserve{0};   // setTopRightReserve()
