@@ -1615,6 +1615,7 @@ set(GUI_SOURCES
     src/gui/MqttSettingsDialog.cpp
     src/gui/MeterSlider.cpp
     src/gui/PhaseKnob.cpp
+    src/gui/EscAutoSweep.cpp
     src/gui/AntennaGeniusApplet.cpp
     src/gui/AntennaGeniusNameBridge.cpp
     src/gui/ShackSwitchApplet.cpp

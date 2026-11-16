@@ -7279,6 +7279,15 @@ target_include_directories(antenna_genius_port_map_test PRIVATE src)
 target_link_libraries(antenna_genius_port_map_test PRIVATE Qt6::Core)
 add_test(NAME antenna_genius_port_map_test COMMAND antenna_genius_port_map_test)
 
+# Auto ESC search (#6589): pure logic, no widgets or radio.
+add_executable(esc_auto_sweep_test
+    tests/esc_auto_sweep_test.cpp
+    src/gui/EscAutoSweep.cpp
+)
+target_include_directories(esc_auto_sweep_test PRIVATE src)
+target_link_libraries(esc_auto_sweep_test PRIVATE Qt6::Core)
+add_test(NAME esc_auto_sweep_test COMMAND esc_auto_sweep_test)
+
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
 # to computeCenters() can't silently regress the per-band point counts.
