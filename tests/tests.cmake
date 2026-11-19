@@ -7178,6 +7178,14 @@ target_include_directories(spot_position_registry_test PRIVATE src)
 target_link_libraries(spot_position_registry_test PRIVATE Qt6::Core)
 add_test(NAME spot_position_registry_test COMMAND spot_position_registry_test)
 
+# Rate gate for the quiet QRZ lookups behind spot distance/heading (#6603).
+add_executable(spot_qrz_prefetch_gate_test
+    tests/spot_qrz_prefetch_gate_test.cpp
+)
+target_include_directories(spot_qrz_prefetch_gate_test PRIVATE src)
+target_link_libraries(spot_qrz_prefetch_gate_test PRIVATE aethercore Qt6::Core Qt6::Network)
+add_test(NAME spot_qrz_prefetch_gate_test COMMAND spot_qrz_prefetch_gate_test)
+
 add_executable(distance_bearing_text_test
     tests/distance_bearing_text_test.cpp
 )

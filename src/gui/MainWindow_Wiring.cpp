@@ -11,6 +11,7 @@
 #include "models/CwDecodeSettings.h"
 #include "PeripheralAuthStore.h"
 #include "core/CallsignLookupService.h"
+#include "core/SpotQrzPrefetcher.h"
 #include "core/backends/AutoRfGainControl.h"
 #include "core/ClientDisplaySettings.h"
 #include "core/DbmRangePlausibility.h"
@@ -4649,7 +4650,13 @@ void MainWindow::wirePanadapter(PanadapterApplet* applet)
                 && spot.source != QLatin1String("EiBi")) {
                 const CallsignInfo geo =
                     CallsignLookupService::instance().offlineGeo(spot.callsign);
-                if (geo.distanceKm >= 0.0 && geo.bearingDeg >= 0.0) {
+                // A country center can be hundreds of miles and tens of
+                // degrees off, so show nothing until the station's real
+                // position is known; the quiet QRZ prefetch fills it in.
+                if (geo.distanceApprox)
+                    SpotQrzPrefetcher::instance().request(spot.callsign, spot.rxFreqMhz);
+                if (geo.distanceKm >= 0.0 && geo.bearingDeg >= 0.0
+                    && !geo.distanceApprox) {
                     markers.last().distanceKm = geo.distanceKm;
                     markers.last().bearingDeg = geo.bearingDeg;
                     markers.last().distanceApprox = geo.distanceApprox;
@@ -4687,6 +4694,11 @@ void MainWindow::wirePanadapter(PanadapterApplet* applet)
                 spotRebuildTimer.timer, scheduleRebuildSpots);
         connect(spots, &SpotModel::spotRemoved,
                 spotRebuildTimer.timer, scheduleRebuildSpots);
+        // A quiet QRZ lookup finished: rebuild so the tooltip picks up the
+        // station's real distance/heading (#6603).
+        connect(&CallsignLookupService::instance(), &CallsignLookupService::infoReady,
+                spotRebuildTimer.timer,
+                [scheduleRebuildSpots](const CallsignInfo&, bool) { scheduleRebuildSpots(); });
         connect(spots, &SpotModel::spotsCleared,
                 spotRebuildTimer.timer, scheduleRebuildSpots);
         connect(spots, &SpotModel::spotsRefreshed,
