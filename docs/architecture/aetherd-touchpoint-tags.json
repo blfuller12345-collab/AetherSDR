@@ -221,6 +221,12 @@
   "split": "",
   "confidence": "high"
  },
+ "core/SpotQrzPrefetcher.h": {
+  "tag": "universal",
+  "note": "Rate-limited background QRZ lookups for spotted callsigns through CallsignLookupService; radio-agnostic spot integration.",
+  "split": "",
+  "confidence": "high"
+ },
  "core/CallsignLookupService.h": {
   "tag": "universal",
   "note": "Orchestrates QRZ/cty.dat callsign lookups + cache; radio-agnostic spot/logging integration.",
