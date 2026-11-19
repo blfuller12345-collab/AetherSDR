@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 292 touchpoint headers (237 core, 55 models) — 292/292 tagged, 0/292 converted.
+**Totals:** 294 touchpoint headers (238 core, 56 models) — 293/294 tagged, 0/294 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -166,6 +166,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/SpectrumDecodeScale.h` | 1 | universal — Immutable sample decode aperture and local generation carried through the existing spectrum feed. No commands, vendor types or backend access; queued observations retain the scale that produced their levels. | unconverted |
 | `core/SpotCommandPolicy.h` | 4 | ui-support — Settings-backed passive-spots toggle gating whether client emits spot-add cmds; pure AppSettings policy, no radio state | unconverted |
 | `core/SpotModeResolver.h` | 4 | universal — Maps DX-cluster spot mode/comment/band-plan to canonical radio mode; pure spot-to-state logic, no vendor ties. | unconverted |
+| `core/SpotQrzPrefetcher.h` | 1 | — | unconverted |
 | `core/StreamStatus.h` | 1 | vendor(flex) — SmartSDR stream-status parsing: client_handle ownership, DAX RX/TX orphan-stream firmware quirks — pure Flex wire logic | unconverted |
 | `core/SupportBundle.h` | 1 | ui-support — Diagnostics bundle: archives logs/sysinfo and opens email client; client-side support tooling, not radio state | unconverted |
 | `core/SystemInfo.h` | 2 | ui-support — Process-local per-thread CPU diagnostics and sampling math for the Runtime Monitor. Host observability plumbing, not radio state. | unconverted |
@@ -265,6 +266,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `models/DaxReceiveModel.h` | 1 | universal — Owner-thread adapter from typed native receive PCM and stable TCI receiver bindings to the existing 24 kHz virtual audio bridges; no radio wire protocol. | unconverted |
 | `models/DecoderAudioModel.h` | 3 | mixed(flex) — Selected-receiver fixed24 decoder PCM and bounded delivery, independent of speaker controls. Native ingress uses normalized typed slice frames; the compatibility DAX lane uses RadioModel's existing stream and holder registry. | unconverted |
 | `models/DigitalVoiceWaveformHistory.h` | 1 | mixed(flex) — Rolling health history for the DV waveform path (sample rate, turnaround, deficits). Generic rate/latency telemetry fused with Flex VITA sequence-gap counters. | unconverted |
+| `models/DiversityPairPolicy.h` | 1 | universal — Pure decision logic for which two diversity slices form one receive pair (radio diversity_index, pan fallback) — no QObject, no I/O, no model access. Canonical slice state only. | unconverted |
 | `models/EqualizerModel.h` | 3 | universal — 8-band TX/RX audio EQ state and typed enable/band-gain intent are universal; Flex encoding is backend-owned, legacy status parsing remains | unconverted |
 | `models/FirmwareInstallModel.h` | 1 | peripheral(ctr2) — CTR2-Max firmware installer model behind the CTR2 window: the signed release catalog, which controller is connected and in what mode, and actions on it (EspFirmwareJob in ROM download mode, or Ctr2ProxyModel's updater over the USB link), each checked against the device the operator confirmed. Controller firmware tooling, no radio state; a peripheral, NOT behind the radio seam. | unconverted |
 | `models/FlexWaveformModel.h` | 2 | vendor(flex) — Flex waveform/WFP status mirror with typed management intents; the backend encodes commands. | unconverted |
