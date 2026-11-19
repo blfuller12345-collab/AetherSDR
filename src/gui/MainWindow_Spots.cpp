@@ -247,22 +247,45 @@ void MainWindow::wireSpotSubsystem()
             });
     });
 
-    // MQTT → panadapter overlay display
+    // MQTT → panadapter overlay display.  Every pan shows the same station
+    // status, so each value goes to all of them, and the latest value per
+    // topic is kept so a pan opened later starts with the current picture
+    // instead of waiting for the next message (a retained, change-only
+    // topic may not arrive again for hours).
+    struct MqttOverlayValue { int order; QString label; QString value; QString color; };
+    auto mqttOverlayValues = std::make_shared<QMap<QString, MqttOverlayValue>>();
+    auto applyMqttOverlay = [this, mqttOverlayValues](SpectrumWidget* sw) {
+        if (!sw) return;
+        sw->setMqttOverlayStacked(m_appletPanel->mqttApplet()->overlayLayout()
+                                  == MqttOverlayLayout::Stacked);
+        for (auto it = mqttOverlayValues->constBegin(); it != mqttOverlayValues->constEnd(); ++it)
+            sw->setMqttDisplayValue(it.key(), it->order, it->label, it->value, it->color);
+    };
     connect(m_appletPanel->mqttApplet(), &MqttApplet::displayValueChanged,
-            this, [this](const QString& topic, int order,
+            this, [this, mqttOverlayValues](const QString& topic, int order,
                          const QString& label, const QString& value,
                          const QString& color) {
-        if (auto* sw = m_panStack->activeSpectrum()) {
-            sw->setMqttOverlayStacked(m_appletPanel->mqttApplet()->overlayLayout()
-                                      == MqttOverlayLayout::Stacked);
-            sw->setMqttDisplayValue(topic, order, label, value, color);
+        mqttOverlayValues->insert(topic, MqttOverlayValue{order, label, value, color});
+        const bool stacked = m_appletPanel->mqttApplet()->overlayLayout()
+                             == MqttOverlayLayout::Stacked;
+        for (auto* applet : m_panStack->allApplets()) {
+            if (auto* sw = applet->spectrumWidget()) {
+                sw->setMqttOverlayStacked(stacked);
+                sw->setMqttDisplayValue(topic, order, label, value, color);
+            }
         }
     });
     connect(m_appletPanel->mqttApplet(), &MqttApplet::displayCleared,
-            this, [this] {
-        if (auto* sw = m_panStack->activeSpectrum()) {
-            sw->clearMqttDisplay();
+            this, [this, mqttOverlayValues] {
+        mqttOverlayValues->clear();
+        for (auto* applet : m_panStack->allApplets()) {
+            if (auto* sw = applet->spectrumWidget())
+                sw->clearMqttDisplay();
         }
+    });
+    connect(m_panStack, &PanadapterStack::panAdded, this,
+            [this, applyMqttOverlay](const QString& panId) {
+        applyMqttOverlay(m_panStack->spectrum(panId));
     });
     auto mqttAntennaAliasQueue = std::make_shared<MqttAntennaAliasQueue>();
     auto hasStableRadioAliasKey = [this] {
