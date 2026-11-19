@@ -4,7 +4,7 @@
 
 Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine-design.md) §2, §10). One row per engine header the UI includes; converting a touchpoint means the UI reaches that surface through the versioned protocol instead of the header.
 
-**Totals:** 290 touchpoint headers (235 core, 55 models) — 290/290 tagged, 0/290 converted.
+**Totals:** 291 touchpoint headers (236 core, 55 models) — 291/291 tagged, 0/291 converted.
 
 | Header | Includers | Tag | Status |
 |---|---:|---|---|
@@ -164,6 +164,7 @@ Burndown manifest for the engine/UI decoupling ([RFC](../aetherd-headless-engine
 | `core/SpectrumDecodeScale.h` | 1 | universal — Immutable sample decode aperture and local generation carried through the existing spectrum feed. No commands, vendor types or backend access; queued observations retain the scale that produced their levels. | unconverted |
 | `core/SpotCommandPolicy.h` | 4 | ui-support — Settings-backed passive-spots toggle gating whether client emits spot-add cmds; pure AppSettings policy, no radio state | unconverted |
 | `core/SpotModeResolver.h` | 4 | universal — Maps DX-cluster spot mode/comment/band-plan to canonical radio mode; pure spot-to-state logic, no vendor ties. | unconverted |
+| `core/SpotQrzPrefetcher.h` | 1 | universal — Rate-limited background QRZ lookups for spotted callsigns through CallsignLookupService; radio-agnostic spot integration. | unconverted |
 | `core/StreamStatus.h` | 1 | vendor(flex) — SmartSDR stream-status parsing: client_handle ownership, DAX RX/TX orphan-stream firmware quirks — pure Flex wire logic | unconverted |
 | `core/SupportBundle.h` | 1 | ui-support — Diagnostics bundle: archives logs/sysinfo and opens email client; client-side support tooling, not radio state | unconverted |
 | `core/SystemInfo.h` | 2 | ui-support — Process-local per-thread CPU diagnostics and sampling math for the Runtime Monitor. Host observability plumbing, not radio state. | unconverted |
