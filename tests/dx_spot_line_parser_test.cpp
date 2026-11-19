@@ -258,6 +258,21 @@ void testReportSnr()
     expectTrue("snr: empty", !DxSpotLineParser::extractReportSnr("", snr));
 }
 
+void testGridFromComment()
+{
+    using DxSpotLineParser::gridFromComment;
+    expectEqual("grid: six-char", gridFromComment("EM32DE"), "EM32DE");
+    expectEqual("grid: lower subsquare", gridFromComment("FN31pr tnx"), "FN31PR");
+    expectEqual("grid: four-char", gridFromComment("CQ EM32"), "EM32");
+    expectEqual("grid: path, DX last", gridFromComment("EM12>EM32"), "EM32");
+    expectEqual("grid: path with mode", gridFromComment("EM12KX<ES>EM32DE"), "EM32DE");
+    expectEqual("grid: none", gridFromComment("CW big signal"), "");
+    expectEqual("grid: not inside a word", gridFromComment("XEM32DE ZZ"), "");
+    expectEqual("grid: out of range field", gridFromComment("ZZ12"), "");
+    expectEqual("grid: not an SNR report", gridFromComment("FT8 -12 dB"), "");
+    expectEqual("grid: empty", gridFromComment(""), "");
+}
+
 } // namespace
 
 int main()
@@ -266,6 +281,7 @@ int main()
     testGoCluster();
     testReplay();
     testReportSnr();
+    testGridFromComment();
 
     if (g_failed == 0) {
         std::printf("\nAll DX spot line parser tests passed.\n");

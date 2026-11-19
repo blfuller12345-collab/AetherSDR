@@ -45,4 +45,11 @@ QVector<DxSpot> replayLog(const QStringList& head, const QStringList& tail,
 // "20 dB over S9" is never read as an SNR.
 bool extractReportSnr(const QString& comment, int& snr);
 
+// The DX station's Maidenhead grid typed into a spot comment ("EM32DE",
+// "FN31pr", "EM12>EM32", "EM12KX<ES>EM32DE"), upper-cased, or empty. A grid
+// must be a whole word: two letters A-R, two digits, optionally two letters
+// A-X. When the comment has more than one, VHF clusters write the spotter's
+// grid first and the DX station's last, so the last one is returned (#6603).
+QString gridFromComment(const QString& comment);
+
 } // namespace AetherSDR::DxSpotLineParser

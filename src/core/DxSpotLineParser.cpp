@@ -175,4 +175,15 @@ bool extractReportSnr(const QString& comment, int& snr)
     return true;
 }
 
+QString gridFromComment(const QString& comment)
+{
+    static const QRegularExpression rx(
+        QStringLiteral(R"((?<![A-Za-z0-9])([A-Ra-r]{2}[0-9]{2}(?:[A-Xa-x]{2})?)(?![A-Za-z0-9]))"));
+    QString last;
+    auto it = rx.globalMatch(comment);
+    while (it.hasNext())
+        last = it.next().captured(1);
+    return last.toUpper();
+}
+
 } // namespace AetherSDR::DxSpotLineParser

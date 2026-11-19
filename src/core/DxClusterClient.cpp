@@ -290,9 +290,16 @@ void DxClusterClient::handleLine(const QString& line)
         // A grid the spotter reported (upper case; the cluster's own guess is
         // lower case and only a database home QTH) places the station for
         // the panadapter's distance/heading (#6603).
-        if (spot.dxGrid.size() >= 4 && spot.dxGrid == spot.dxGrid.toUpper()) {
+        // A grid typed into the comment ("EM32DE", "EM12>EM32") is the same
+        // kind of report and is used when the line has no grid field.
+        QString reportedGrid;
+        if (spot.dxGrid.size() >= 4 && spot.dxGrid == spot.dxGrid.toUpper())
+            reportedGrid = spot.dxGrid;
+        else
+            reportedGrid = DxSpotLineParser::gridFromComment(spot.comment);
+        if (!reportedGrid.isEmpty()) {
             SpotPositionRegistry::instance().rememberGrid(
-                spot.dxCall, spot.dxGrid, SpotPositionRegistry::Source::Grid,
+                spot.dxCall, reportedGrid, SpotPositionRegistry::Source::Grid,
                 QDateTime::currentMSecsSinceEpoch());
         }
         emit spotReceived(spot);
