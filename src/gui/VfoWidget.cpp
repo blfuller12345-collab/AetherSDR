@@ -423,9 +423,15 @@ static bool hasFmToneControls(const QString& mode)
 static const QString kBgStyle =
     "QWidget#VfoWidgetRoot { background: transparent; border: none; }";
 
+// Antenna names on the flag: characters kept before the name is shortened.
+constexpr int kAntennaLabelMaxChars = 8;
+
 static const QString kFlatBtn =
     "QPushButton { background: transparent; border: none; "
     "font-size: 13px; font-weight: bold; padding: 0 6px; margin: 0; }"
+    // Antenna names longer than the 13px text fits use a smaller font before
+    // anything is cut off (updateAntennaButton sets "compact").
+    "QPushButton[compact=\"true\"] { font-size: 11px; }"
     // Layout-stable hover: a translucent fill (no border added) so the flat
     // antenna buttons signal clickability on hover without the text jumping
     // — the other flag controls change border colour, but kFlatBtn has no
@@ -8040,12 +8046,25 @@ void VfoWidget::updateAntennaButton(QPushButton* button, const QString& token, b
     const QString shortLabel = !profileId.isEmpty()
         ? m_kiwiSdrManager->displayName(profileId)
         : (m_radioModel
-            ? m_radioModel->antennaShortDisplayName(effectiveToken, 6)
+            ? m_radioModel->antennaShortDisplayName(effectiveToken, kAntennaLabelMaxChars)
             : effectiveToken);
-    const QFontMetrics fm(button->font());
+    // The flag's top row is shared with the filter width, SPLIT and TX, so the
+    // button can't grow. Up to 8 characters fit by stepping down to 11px;
+    // only a name wider than that is cut short.
     constexpr int kMinWidth = 34;
     constexpr int kMaxWidth = 66;
     constexpr int kPad = 12;
+    const auto setCompact = [button](bool compact) {
+        if (button->property("compact").toBool() == compact)
+            return;
+        button->setProperty("compact", compact);
+        button->style()->unpolish(button);
+        button->style()->polish(button);
+    };
+    setCompact(false);
+    if (QFontMetrics(button->font()).horizontalAdvance(shortLabel) > kMaxWidth - kPad)
+        setCompact(true);
+    const QFontMetrics fm(button->font());
     const QString text = fm.elidedText(shortLabel, Qt::ElideRight, kMaxWidth - kPad);
     button->setText(text);
     button->setFixedWidth(qBound(kMinWidth, fm.horizontalAdvance(text) + kPad, kMaxWidth));

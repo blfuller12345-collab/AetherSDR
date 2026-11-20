@@ -2625,7 +2625,7 @@ void RxApplet::updateAntennaButton(QPushButton* button, const QString& token, bo
     const QString shortLabel = !profileId.isEmpty()
         ? m_kiwiSdrManager->displayName(profileId)
         : (m_radioModel
-            ? m_radioModel->antennaShortDisplayName(effectiveToken, 6)
+            ? m_radioModel->antennaShortDisplayName(effectiveToken, 8)
             : effectiveToken);
     const QFontMetrics fm(button->font());
     constexpr int kMinWidth = 30;
