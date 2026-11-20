@@ -1880,6 +1880,10 @@ void VfoWidget::buildTabContent()
         m_escAutoStatusLbl->setObjectName(QStringLiteral("escAutoStatus"));
         m_escAutoStatusLbl->setStyleSheet(kLabelStyle);
         m_escAutoStatusLbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        // A result line can be wider than the flag ("Auto ESC: 6.2 dB
+        // stronger (230°, 1.89) — saved for 030°"); wrap it instead of
+        // clipping its start, which the right alignment would do.
+        m_escAutoStatusLbl->setWordWrap(true);
         m_escAutoStatusLbl->setContentsMargins(0, 0, 10, 0);
         m_escAutoStatusLbl->setVisible(false);
         escVbox->addWidget(m_escAutoStatusLbl);
@@ -4196,6 +4200,7 @@ void VfoWidget::stopEscAutoSweep(bool restoreStart, const QString& status)
     }
     if (m_escAutoStatusLbl) {
         m_escAutoStatusLbl->setText(status);
+        m_escAutoStatusLbl->setToolTip(status);
         m_escAutoStatusLbl->setVisible(!status.isEmpty());
     }
 }
