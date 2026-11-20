@@ -617,6 +617,18 @@ private:
     // Auto ESC heading memory: recall (or auto-tune) when the beam stops.
     void onRotorHeadingSettled(int headingDeg);
     void setEscAutoStatus(const QString& text);
+    // Diversity setup memory: how this slice was last left on this band
+    // (ESC, phase, gain, mute, volume, Auto AGC-T, antenna) comes back after
+    // a restart, diversity being turned on again, or a band change. Changes
+    // the radio makes on its own right after those events are not saved.
+    QTimer*      m_divSetupSaveTimer{nullptr};
+    QString      m_divSetupBand;
+    qint64       m_divSetupQuietUntilMs{0};
+    quint64      m_divSetupGeneration{0};
+    void divSetupEvent();
+    void divSetupSettingChanged();
+    void saveDivSetup(const QString& band);
+    void restoreDivSetup();
     bool         m_diversityAllowed{true};
     bool         m_escControlsAvailable{true};
     void syncEscPanelVisibility();
