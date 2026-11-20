@@ -210,8 +210,9 @@ buttons on the VFO flag, the RX applet and the panadapter menu show the name of
 the antenna the Antenna Genius has selected on that port, and change as the
 Antenna Genius switches antennas with the band. The name replaces the
 connector's **Custom Name** while the Antenna Genius is connected; the custom
-name is kept and comes back when it disconnects. The flag's button has room for
-about six characters; the full name is in its tooltip and menu.
+name is kept and comes back when it disconnects. The flag's button shows up to
+eight characters, in a slightly smaller font when a long name needs it; a
+longer name is cut short there, and the full name is in its tooltip and menu.
 
 The setting is kept per radio.
 
