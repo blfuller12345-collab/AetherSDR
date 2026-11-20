@@ -39,9 +39,11 @@
 #include "Theme.h"
 #include "core/AppSettings.h"
 #include "RotorHeadingFeed.h"
+#include "DiversitySetupMemory.h"
 #include "InteractionSettings.h"
 
 #include <QDateTime>
+#include <QJsonDocument>
 #include <QAction>
 #include <QActionGroup>
 #include <QPainter>
@@ -451,6 +453,40 @@ static const QString kTabLblDspActive =
 static const QString kDisabledBtn =
     "QPushButton:disabled { background-color: #1a1a2a; color: #556070; "
     "border: 1px solid #2a3040; }";
+
+// Diversity setup memory, shared by every VFO flag and kept in settings.
+namespace {
+const QString kDivSetupKey = QStringLiteral("DiversitySetupMemory");
+constexpr int kDivSetupRestoreDelayMs = 2000;  // after the radio's own resets
+constexpr int kDivSetupQuietMs = 3000;         // radio-made changes not saved
+constexpr int kDivSetupSaveDelayMs = 1000;     // a slider drag saves once
+
+DiversitySetupMemory& divSetupMemory()
+{
+    static DiversitySetupMemory mem = [] {
+        const QByteArray json =
+            AppSettings::instance().value(kDivSetupKey, QString()).toString().toUtf8();
+        return json.isEmpty()
+            ? DiversitySetupMemory()
+            : DiversitySetupMemory::fromJson(QJsonDocument::fromJson(json).object());
+    }();
+    return mem;
+}
+
+void persistDivSetupMemory()
+{
+    auto& s = AppSettings::instance();
+    s.setValue(kDivSetupKey, QString::fromUtf8(
+        QJsonDocument(divSetupMemory().toJson()).toJson(QJsonDocument::Compact)));
+    s.save();
+}
+
+int escPhaseRadToDeg(float rad)
+{
+    int deg = static_cast<int>(std::lround(rad * 180.0f / static_cast<float>(M_PI))) % 360;
+    return deg < 0 ? deg + 360 : deg;
+}
+} // namespace
 
 static const QString kDspToggle =
     "QPushButton { background: #1a2a3a; border: 1px solid #304050; border-radius: 2px; "
@@ -4291,6 +4327,124 @@ void VfoWidget::onRotorHeadingSettled(int headingDeg)
     setEscAutoStatus(QStringLiteral("New heading %1: press A to tune and save it").arg(deg));
 }
 
+void VfoWidget::divSetupEvent()
+{
+    // The radio resets some of these itself right after a band change or
+    // diversity on; don't save those, then put the operator's setup back.
+    m_divSetupQuietUntilMs = QDateTime::currentMSecsSinceEpoch() + kDivSetupQuietMs;
+    if (m_divSetupSaveTimer)
+        m_divSetupSaveTimer->stop();
+    const quint64 generation = ++m_divSetupGeneration;
+    QTimer::singleShot(kDivSetupRestoreDelayMs, this, [this, generation] {
+        if (generation == m_divSetupGeneration)
+            restoreDivSetup();
+    });
+}
+
+void VfoWidget::divSetupSettingChanged()
+{
+    if (!m_slice || !m_divSetupSaveTimer
+        || QDateTime::currentMSecsSinceEpoch() < m_divSetupQuietUntilMs)
+        return;
+    if (!m_slice->diversity() && !m_slice->isDiversityChild())
+        return;
+    m_divSetupSaveTimer->start();
+}
+
+void VfoWidget::saveDivSetup(const QString& band)
+{
+    if (!m_slice || band.isEmpty())
+        return;
+    if (!m_slice->diversity() && !m_slice->isDiversityChild())
+        return;
+    // Auto ESC moves the controls while it measures: save where it ends up.
+    if (m_escSweep.active()) {
+        if (m_divSetupSaveTimer)
+            m_divSetupSaveTimer->start();
+        return;
+    }
+    DiversitySliceSetup setup;
+    setup.escOn = m_slice->escEnabled();
+    setup.escPhaseDeg = escPhaseRadToDeg(m_slice->escPhaseShift());
+    setup.escGainPct = static_cast<int>(std::lround(m_slice->escGain() * 100.0f));
+    setup.muted = m_slice->audioMute();
+    setup.volume = static_cast<int>(std::lround(m_slice->audioGain()));
+    setup.autoAgcT = m_slice->automaticAgcThresholdActiveOrPending();
+    setup.rxAntenna = m_slice->rxAntenna();
+    const auto role = m_slice->isDiversityChild() ? DiversitySetupMemory::Role::Child
+                                                  : DiversitySetupMemory::Role::Parent;
+    if (divSetupMemory().recall(band, role) == setup.normalized())
+        return;
+    divSetupMemory().store(band, role, setup);
+    persistDivSetupMemory();
+}
+
+void VfoWidget::restoreDivSetup()
+{
+    if (!m_slice || m_divSetupBand.isEmpty() || m_escSweep.active())
+        return;
+    if (!m_slice->diversity() && !m_slice->isDiversityChild())
+        return;
+    const bool child = m_slice->isDiversityChild();
+    const auto saved = divSetupMemory().recall(
+        m_divSetupBand,
+        child ? DiversitySetupMemory::Role::Child : DiversitySetupMemory::Role::Parent);
+    if (!saved)
+        return;  // nothing saved for this band yet: leave it as it is
+
+    bool changed = false;
+    if (!saved->rxAntenna.isEmpty() && saved->rxAntenna != m_slice->rxAntenna()
+        && m_slice->rxAntennaList().contains(saved->rxAntenna)) {
+        m_slice->setRxAntenna(saved->rxAntenna);
+        changed = true;
+    }
+    if (saved->muted != m_slice->audioMute()) {
+        m_slice->setAudioMute(saved->muted);
+        changed = true;
+    }
+    if (saved->volume != static_cast<int>(std::lround(m_slice->audioGain()))) {
+        m_slice->setAudioGain(static_cast<float>(saved->volume));
+        changed = true;
+    }
+    if (saved->autoAgcT != m_slice->automaticAgcThresholdActiveOrPending() && m_radioModel
+        && m_radioModel->autoAgcThresholdUnavailableReason(m_slice).isEmpty()) {
+        m_slice->requestAgcThresholdMode(saved->autoAgcT ? AgcThresholdMode::Automatic
+                                                         : AgcThresholdMode::Manual);
+        syncAutoAgcThreshold();
+        changed = true;
+    }
+    if (!child) {
+        // FlexLib: ESC belongs to the diversity parent.
+        if (saved->escOn != m_slice->escEnabled()) {
+            m_slice->setEscEnabled(saved->escOn);
+            changed = true;
+        }
+        if (saved->escPhaseDeg != escPhaseRadToDeg(m_slice->escPhaseShift())) {
+            m_slice->setEscPhaseShift(saved->escPhaseDeg * static_cast<float>(M_PI) / 180.0f);
+            changed = true;
+        }
+        if (saved->escGainPct != static_cast<int>(std::lround(m_slice->escGain() * 100.0f))) {
+            m_slice->setEscGain(saved->escGainPct / 100.0f);
+            changed = true;
+        }
+        // A setting saved for where the beam points now is more specific.
+        auto& feed = RotorHeadingFeed::instance();
+        if (saved->escOn && feed.appliesTo(m_divSetupBand)) {
+            if (const auto heading = feed.stableHeading()) {
+                if (const auto point = feed.memory().recall(m_divSetupBand, *heading)) {
+                    applyEscSweepPoint(*point);
+                    changed = true;
+                }
+            }
+        }
+        if (changed)
+            setEscAutoStatus(QStringLiteral("Diversity setup restored for %1").arg(m_divSetupBand));
+    }
+    if (changed)
+        qDebug() << "VfoWidget: diversity setup restored for slice" << m_slice->sliceId()
+                 << "on" << m_divSetupBand;
+}
+
 void VfoWidget::setAfGain(int pct)
 {
     if (m_afGainSlider) {
@@ -5279,6 +5433,10 @@ void VfoWidget::setSlice(SliceModel* slice)
     // before letting go of it (#6589).
     if (m_escSweep.active())
         stopEscAutoSweep(true, QString());
+    if (m_divSetupSaveTimer && m_divSetupSaveTimer->isActive()) {
+        m_divSetupSaveTimer->stop();
+        saveDivSetup(m_divSetupBand);
+    }
     if (m_slice)
         m_slice->disconnect(this);
     m_slice = slice;
@@ -5594,6 +5752,41 @@ void VfoWidget::setSlice(SliceModel* slice)
         m_phaseKnob->setPhase(rad);
         m_updatingFromModel = false;
     });
+    // Diversity setup memory: save what the operator sets, put it back after
+    // a restart, diversity on, or a band change.
+    if (!m_divSetupSaveTimer) {
+        m_divSetupSaveTimer = new QTimer(this);
+        m_divSetupSaveTimer->setSingleShot(true);
+        m_divSetupSaveTimer->setInterval(kDivSetupSaveDelayMs);
+        connect(m_divSetupSaveTimer, &QTimer::timeout, this,
+                [this] { saveDivSetup(m_divSetupBand); });
+    }
+    connect(m_slice, &SliceModel::escEnabledChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::escGainChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::escPhaseShiftChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::audioMuteChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::audioGainChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::agcThresholdModeChanged, this,
+            &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::rxAntennaChanged, this, &VfoWidget::divSetupSettingChanged);
+    connect(m_slice, &SliceModel::diversityChanged, this, [this](bool on) {
+        if (on)
+            divSetupEvent();
+    });
+    connect(m_slice, &SliceModel::frequencyChanged, this, [this](double mhz) {
+        const QString band = EscHeadingMemory::bandKey(mhz);
+        if (band == m_divSetupBand)
+            return;
+        // Anything not yet saved belongs to the band being left.
+        if (m_divSetupSaveTimer->isActive()) {
+            m_divSetupSaveTimer->stop();
+            saveDivSetup(m_divSetupBand);
+        }
+        m_divSetupBand = band;
+        divSetupEvent();
+    });
+    m_divSetupBand = EscHeadingMemory::bandKey(m_slice->frequency());
+    divSetupEvent();
     // DSP toggles
     auto connectDsp = [this](auto signal, QPushButton* btn) {
         connect(m_slice, signal, this, [this, btn](bool on) {

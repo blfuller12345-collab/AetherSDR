@@ -119,6 +119,14 @@ When the beam has stopped on a heading (it must hold still for about 7 seconds, 
 
 The right-click menu also shows the current heading and how many headings are saved for the band, and has **Forget saved headings** for the band. A recalled setting is the best one found under the conditions at the time; if a signal sounds off, press **A** again to refresh it. AetherSDR never talks to the rotator itself.
 
+### Your setup comes back by itself
+
+AetherSDR remembers how you last left each diversity slice on each band and puts it back after you restart AetherSDR, turn DIV on again, or go to another band and come back. On the parent slice that is ESC on or off, phase and gain; on both slices it is mute, volume, **Auto AGC-T** and the receive antenna.
+
+- The radio resets some of these itself when diversity starts or the band changes (for example it mutes the child slice). AetherSDR waits about 2 seconds, then puts your setup back, and the ESC panel says *Diversity setup restored for 2m*.
+- A band you have never set up is left as the radio has it. Set it up once and it is remembered from then on.
+- With [heading memory](#remembering-settings-per-beam-heading) in use, a setting saved for where the beam points now wins over the last phase and gain.
+
 ### Finding the Best Null
 
 1. Enable DIV and ESC
@@ -190,9 +198,10 @@ ESC appears only on the **parent** slice, and only while DIV is on.
 
 ### My ESC settings were lost
 
-ESC state is not saved, so it resets after band changes and reconnects.
+AetherSDR puts your last setup for the band back about 2 seconds after a restart, DIV on, or a band change (see [Your setup comes back by itself](#your-setup-comes-back-by-itself)).
 
-1. Re-adjust the phase and gain (see [Finding the best null](#finding-the-best-null)).
+1. If nothing came back, this band has no saved setup yet: set it up once and it is kept from then on.
+2. Changes made in the first 3 seconds after one of those events are not saved, so the radio's own resets aren't mistaken for yours. Change it again after that.
 
 ## See also
 

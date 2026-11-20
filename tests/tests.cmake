@@ -7356,6 +7356,16 @@ target_include_directories(esc_heading_memory_test PRIVATE src)
 target_link_libraries(esc_heading_memory_test PRIVATE Qt6::Core)
 add_test(NAME esc_heading_memory_test COMMAND esc_heading_memory_test)
 
+# Diversity setup memory: how each diversity slice was last left on each band
+# (ESC, phase, gain, mute, volume, Auto AGC-T, antenna). Pure logic.
+add_executable(diversity_setup_memory_test
+    tests/diversity_setup_memory_test.cpp
+    src/gui/DiversitySetupMemory.cpp
+)
+target_include_directories(diversity_setup_memory_test PRIVATE src)
+target_link_libraries(diversity_setup_memory_test PRIVATE Qt6::Core)
+add_test(NAME diversity_setup_memory_test COMMAND diversity_setup_memory_test)
+
 # Pure-math test for the ATU pre-tune center-frequency calculator.
 # Locks in the IARU R1 reference table from issue #2624 so future edits
 # to computeCenters() can't silently regress the per-band point counts.
