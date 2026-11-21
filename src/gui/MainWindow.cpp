@@ -7925,11 +7925,11 @@ bool MainWindow::activateMemorySpot(int memoryIndex, const QString& preferredPan
         m_pendingMemoryRevealTargetMhz = 0.0;
         if (auto* pendingSlice = m_radioModel.slice(sliceId)) {
             const double revealMhz = targetMhz > 0.0 ? targetMhz : pendingSlice->frequency();
+            const TuneIntent intent = memoryRecallRevealIntent();
             const TuneCenteringResult result =
-                revealFrequencyIfNeeded(pendingSlice, revealMhz,
-                                        TuneIntent::CommandedTargetCenter,
+                revealFrequencyIfNeeded(pendingSlice, revealMhz, intent,
                                         "memory-apply-timeout");
-            logTunePolicyDecision("memory-apply-timeout", TuneIntent::CommandedTargetCenter,
+            logTunePolicyDecision("memory-apply-timeout", intent,
                                   pendingSlice->frequency(), revealMhz,
                                   result);
         }
@@ -8650,6 +8650,33 @@ const char* MainWindow::tuneIntentName(TuneIntent intent)
 bool MainWindow::panFollowEnabled() const
 {
     return AppSettings::instance().value("PanFollowVfo", "True").toString() == "True";
+}
+
+// Nested JSON under one key (Principle V): {"centerOnMemoryRecall":true}.
+static const QString kTuneCenteringKey = QStringLiteral("TuneCentering");
+
+bool MainWindow::centerPanOnMemoryRecall() const
+{
+    const QJsonObject obj = QJsonDocument::fromJson(
+        AppSettings::instance().value(kTuneCenteringKey, "{}").toString().toUtf8()).object();
+    return obj.value(QStringLiteral("centerOnMemoryRecall")).toBool(true);
+}
+
+void MainWindow::setCenterPanOnMemoryRecall(bool on)
+{
+    auto& settings = AppSettings::instance();
+    QJsonObject obj = QJsonDocument::fromJson(
+        settings.value(kTuneCenteringKey, "{}").toString().toUtf8()).object();
+    obj.insert(QStringLiteral("centerOnMemoryRecall"), on);
+    settings.setValue(kTuneCenteringKey,
+        QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact)));
+    settings.save();
+}
+
+MainWindow::TuneIntent MainWindow::memoryRecallRevealIntent() const
+{
+    return centerPanOnMemoryRecall() ? TuneIntent::CommandedTargetCenter
+                                     : TuneIntent::RevealOffscreen;
 }
 
 void MainWindow::logTunePolicyDecision(const char* source, TuneIntent intent,
