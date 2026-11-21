@@ -4385,6 +4385,18 @@ void VfoWidget::restoreDivSetup()
         return;
     if (!m_slice->diversity() && !m_slice->isDiversityChild())
         return;
+    // Right after connecting, the profile load drops our slice writes for a
+    // few seconds; a restore sent then never reaches the radio. Wait it out
+    // (and keep the radio's own resets from being saved meanwhile).
+    if (m_radioModel && m_radioModel->profileLoadHoldsRadioStateWrites()) {
+        m_divSetupQuietUntilMs = QDateTime::currentMSecsSinceEpoch() + kDivSetupQuietMs;
+        const quint64 generation = m_divSetupGeneration;
+        QTimer::singleShot(500, this, [this, generation] {
+            if (generation == m_divSetupGeneration)
+                restoreDivSetup();
+        });
+        return;
+    }
     const bool child = m_slice->isDiversityChild();
     const auto saved = divSetupMemory().recall(
         m_divSetupBand,
