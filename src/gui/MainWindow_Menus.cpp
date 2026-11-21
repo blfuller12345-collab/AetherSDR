@@ -1384,6 +1384,14 @@ void MainWindow::buildMenuBar()
         AppSettings::instance().save();
     });
 
+    // Off: recalling a memory leaves the pan where it is unless the memory's
+    // frequency is off screen. Spot clicks already work that way.
+    auto* centerOnMemoryAct = viewMenu->addAction("Center Pan on Memory Recall");
+    centerOnMemoryAct->setCheckable(true);
+    centerOnMemoryAct->setChecked(centerPanOnMemoryRecall());
+    connect(centerOnMemoryAct, &QAction::toggled, this,
+            [this](bool on) { setCenterPanOnMemoryRecall(on); });
+
     // Signal/QRM History Markers live exclusively on the SpotHub Display
     // tab — no View-menu duplicate.  Boot-time state is read here; Display
     // tab toggle signals call applySHistoryEnabled / applySHistoryQrmEnabled

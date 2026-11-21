@@ -2179,11 +2179,10 @@ void MainWindow::onSliceAdded(SliceModel* s)
                 m_pendingMemoryRevealSliceId = -1;
                 m_pendingMemoryRevealTargetMhz = 0.0;
                 const double revealMhz = targetMhz > 0.0 ? targetMhz : mhz;
+                const TuneIntent intent = memoryRecallRevealIntent();
                 const TuneCenteringResult result =
-                    revealFrequencyIfNeeded(s, revealMhz,
-                                            TuneIntent::CommandedTargetCenter,
-                                            "memory-apply");
-                logTunePolicyDecision("memory-apply", TuneIntent::CommandedTargetCenter,
+                    revealFrequencyIfNeeded(s, revealMhz, intent, "memory-apply");
+                logTunePolicyDecision("memory-apply", intent,
                                       mhz, revealMhz, result);
             } else {
                 qCDebug(lcProtocol).noquote().nospace()

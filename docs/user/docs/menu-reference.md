@@ -98,6 +98,7 @@ See [Profile Management](./profile-management.md).
 | **VFO Filter Edge ▸** | Default filter-edge lines: Show (default) or Hide. |
 | **Single-Click to Tune** | Tune with one click instead of a double-click. Off by default. |
 | **Pan Follows VFO** | Keep the active slice in view while tuning. On by default. |
+| **Center Pan on Memory Recall** | Recalling a memory moves the panadapter so the memory's frequency is in the center. Turn it off to leave the panadapter where it is; it then moves only if the frequency is off the screen. On by default. |
 | **UI Scale ▸** | 75 % to 200 %, plus Zoom In (Ctrl+=), Zoom Out (Ctrl+-) and Reset (100 %) (Ctrl+0). Takes effect after a restart. |
 | **Reset Applet Order** | Restores the default applet order. |
 | **Minimal Mode** | Ctrl+Shift+M. Collapses the window to a narrow applet strip. See [Keyboard Shortcuts](./keyboard-shortcuts.md). |

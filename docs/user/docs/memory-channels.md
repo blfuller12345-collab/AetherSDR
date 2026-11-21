@@ -39,6 +39,9 @@ The window has no title bar. Drag any empty part of it to move it, and drag an e
   moves between fields
 - **Recall restores the whole setup** — mode, filter and slice settings, not
   just the frequency
+- **Recall centers the panadapter** on the memory's frequency. To leave the
+  panadapter where it is, turn off **View → Center Pan on Memory Recall**;
+  it then moves only when the frequency is off the screen
 
 ### Importing and exporting
 

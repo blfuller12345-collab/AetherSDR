@@ -547,6 +547,11 @@ private:
     // for the same reason: an HL2's automatic gain control is not a Flex's.
     static const char* tuneIntentName(TuneIntent intent);
     bool panFollowEnabled() const;
+    // View → Center Pan on Memory Recall. Off: a recalled memory only moves
+    // the pan when its frequency is off screen (RevealOffscreen).
+    bool centerPanOnMemoryRecall() const;
+    void setCenterPanOnMemoryRecall(bool on);
+    TuneIntent memoryRecallRevealIntent() const;
     BandStackPreselectResult preselectBandStackForTune(SliceModel* slice, double mhz,
                                                        const char* source);
     void applyTuneRequest(SliceModel* slice, double mhz,
