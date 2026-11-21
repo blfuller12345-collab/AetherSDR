@@ -1651,6 +1651,11 @@ signals:
     void radioMessageReceived(const QString& text, MessageSeverity severity);
 
 public:
+    // True while a profile load drops our slice/pan state writes (#3563,
+    // #4142). Callers that restore saved state wait until it is false, or
+    // the writes are lost (diversity setup memory, #6589).
+    bool profileLoadHoldsRadioStateWrites() const { return profileLoadRadioStateWritesHeld(); }
+
     // Send a raw command to the radio. Returns false when the foreign-owner
     // gate (#3977) or profile-load hold (#4142) drops it, or WAN is down; a
     // write onto a dead LAN socket still reports dispatched. Callers that
