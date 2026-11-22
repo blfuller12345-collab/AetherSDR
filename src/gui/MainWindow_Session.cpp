@@ -1695,6 +1695,18 @@ void MainWindow::wireRadioModel()
             this, &MainWindow::onSliceAdded);
     connect(&m_radioModel, &RadioModel::sliceRemoved,
             this, &MainWindow::onSliceRemoved);
+    // Another client retuned one of our slices (e.g. a station controller
+    // sending slice tune ... autopan=0): move the pan only if the new
+    // frequency is off screen, as for a memory recall with centering off.
+    connect(&m_radioModel, &RadioModel::sliceRetunedByOtherClient,
+            this, [this](int sliceId, double mhz) {
+        SliceModel* s = m_radioModel.slice(sliceId);
+        if (!s) { return; }
+        const TuneCenteringResult result =
+            revealFrequencyIfNeeded(s, mhz, TuneIntent::RevealOffscreen, "other-client-tune");
+        logTunePolicyDecision("other-client-tune", TuneIntent::RevealOffscreen,
+                              mhz, mhz, result);
+    });
     // A removed TX slice hands a radio-wide span control to the fallback
     // pane (#5750). Queued: the slice may still be in the model's list while
     // sliceRemoved is being delivered.

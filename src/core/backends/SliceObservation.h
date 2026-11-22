@@ -15,6 +15,9 @@ struct SliceObservation {
     std::optional<QString> reportedModeList;
     std::optional<int> internalPaPower;
     quint64 statusEpoch{0};
+    // Client handle on the status line (the client whose action caused it);
+    // 0 when the radio did not name one.
+    quint32 sourceHandle{0};
 };
 
 } // namespace AetherSDR

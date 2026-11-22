@@ -129,6 +129,7 @@ void FlexStatusIngress::decodeLine(const ParsedMessage& line)
     if (FlexSliceStatus::isSlice(line.object) && !line.kvs.contains(QStringLiteral("waveform_status"))) {
         if (auto slice = FlexSliceStatus::decode(line.object, line.kvs)) {
             slice->statusEpoch = m_epoch;
+            slice->sourceHandle = line.handle;
             emit sliceObserved(*slice);
         } else {
             qCDebug(lcProtocol).noquote() << "FlexStatusIngress: rejected slice status" << line.object;

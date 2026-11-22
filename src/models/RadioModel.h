@@ -1405,6 +1405,10 @@ signals:
     // for CWX, which drive the sidetone gate themselves.
     void cwKeyDownChanged(bool down);
     void sliceAdded(SliceModel* slice);
+    // One of our slices was retuned by another client's command (the radio
+    // named that client on the status line). The GUI reveals the frequency if
+    // it is off screen; the other client may have sent autopan=0.
+    void sliceRetunedByOtherClient(int sliceId, double frequencyMhz);
     void sliceRemoved(int sliceId);
     // Emitted immediately before "sub slice all" is dispatched during connect
     // handshake, opening the connect-time slice enumeration window.

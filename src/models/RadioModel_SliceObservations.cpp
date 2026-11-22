@@ -179,8 +179,17 @@ void RadioModel::applySliceObservation(const SliceObservation& observation, bool
     const auto currentSlice = [&] { return current() && s && slice(id) == s; };
     s->setControlPolicy(m_backend ? m_backend->receiveControlPolicy() : ReceiveControlPolicy::Optimistic);
     if (!currentSlice()) { return; }   // a newer report for this slice ran meanwhile
+    // Another client (a station controller, a logger) retuned OUR slice. It
+    // may have asked the radio not to autopan, so let the GUI reveal it.
+    const bool retunedByOtherClient = !creating && values.frequency
+        && observation.sourceHandle != 0 && observation.sourceHandle != clientHandle()
+        && *values.frequency != s->frequency();
     s->applyChanges(values);
     if (!currentSlice()) { return; }
+    if (retunedByOtherClient) {
+        emit sliceRetunedByOtherClient(id, *values.frequency);
+        if (!currentSlice()) { return; }
+    }
     selectSoleValidTxAntennaIfNeeded(s, values.txAntenna.has_value());
     if (!currentSlice()) { return; }
     m_meterModel.setActiveTxSlice(activeTxSliceNum());
