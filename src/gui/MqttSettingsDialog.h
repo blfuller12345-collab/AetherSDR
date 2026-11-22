@@ -33,6 +33,8 @@ private:
     void savePasswordToKeychain(const QString& password);
 
     void addTopicRow(const MqttTopicDef& def = {});
+    // Swap the current Subscriptions row with its neighbour (-1 up, +1 down).
+    void moveCurrentTopicRow(int delta);
     void removeSelectedTopicRows();
     QVector<MqttTopicDef> topicRows() const;
 

@@ -262,8 +262,18 @@ void MqttSettingsDialog::buildUi()
     auto* topicControls = new QHBoxLayout;
     auto* addTopic = new QPushButton(tr("Add"));
     auto* removeTopic = new QPushButton(tr("Remove"));
+    // The panadapter draws Display topics in this list's order, so let the
+    // operator reorder rows without removing and re-adding them.
+    auto* moveTopicUp = new QPushButton(QStringLiteral("\u25B2"));
+    auto* moveTopicDown = new QPushButton(QStringLiteral("\u25BC"));
+    moveTopicUp->setToolTip(tr("Move the selected topic up (its panadapter line moves up)"));
+    moveTopicDown->setToolTip(tr("Move the selected topic down (its panadapter line moves down)"));
+    moveTopicUp->setAccessibleName(tr("Move topic up"));
+    moveTopicDown->setAccessibleName(tr("Move topic down"));
     topicControls->addWidget(addTopic);
     topicControls->addWidget(removeTopic);
+    topicControls->addWidget(moveTopicUp);
+    topicControls->addWidget(moveTopicDown);
     topicControls->addStretch();
     topicControls->addWidget(new QLabel(tr("Panadapter layout:")));
     m_overlayLayoutCombo = new QComboBox;
@@ -297,6 +307,8 @@ void MqttSettingsDialog::buildUi()
     connect(addTopic, &QPushButton::clicked, this, [this] { addTopicRow(); });
     connect(removeTopic, &QPushButton::clicked,
             this, &MqttSettingsDialog::removeSelectedTopicRows);
+    connect(moveTopicUp, &QPushButton::clicked, this, [this] { moveCurrentTopicRow(-1); });
+    connect(moveTopicDown, &QPushButton::clicked, this, [this] { moveCurrentTopicRow(1); });
 
     auto* buttonsTab = new QWidget;
     auto* buttonsLayout = new QVBoxLayout(buttonsTab);
@@ -441,6 +453,24 @@ void MqttSettingsDialog::removeSelectedTopicRows()
     for (const int row : selectedRowsDescending(m_topicsTable)) {
         m_topicsTable->removeRow(row);
     }
+}
+
+void MqttSettingsDialog::moveCurrentTopicRow(int delta)
+{
+    const int row = m_topicsTable->currentRow();
+    const int target = row + delta;
+    if (row < 0 || target < 0 || target >= m_topicsTable->rowCount()) {
+        return;
+    }
+    for (int col = 0; col < m_topicsTable->columnCount(); ++col) {
+        QTableWidgetItem* a = m_topicsTable->takeItem(row, col);
+        QTableWidgetItem* b = m_topicsTable->takeItem(target, col);
+        m_topicsTable->setItem(row, col, b);
+        m_topicsTable->setItem(target, col, a);
+    }
+    m_topicsTable->clearSelection();
+    m_topicsTable->setCurrentCell(target, 0);
+    m_topicsTable->selectRow(target);
 }
 
 QVector<MqttTopicDef> MqttSettingsDialog::topicRows() const
