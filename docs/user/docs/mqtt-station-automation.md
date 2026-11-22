@@ -57,7 +57,7 @@ The applet shows **On/Off**, the connection status, a log of incoming messages, 
 
 ### Panadapter display
 
-Topics with **Display** ticked show their latest value on the panadapter, so a beam heading or the selected antenna is visible without switching windows. Each value is shown as `Label: value`, in the order the topics are listed on the **Subscriptions** tab.
+Topics with **Display** ticked show their latest value on the panadapter, so a beam heading or the selected antenna is visible without switching windows. Each value is shown as `Label: value`, in the order the topics are listed on the **Subscriptions** tab. To change that order, select a topic and use the **▲** and **▼** buttons next to **Add** / **Remove**.
 
 The label is the last part of the topic (`status` for `lps/hf/status`) unless you type your own in the topic's **Label** column. Two topics that end the same way, such as `lps/hf/status` and `lps/vhf/status`, are both shown; give them labels to tell them apart.
 
