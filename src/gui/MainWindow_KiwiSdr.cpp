@@ -685,6 +685,22 @@ void MainWindow::clearKiwiSdrVirtualAntennaForSlice(int sliceId)
     }
 }
 
+void MainWindow::clearKiwiSdrVirtualAntennaIfHeld(int sliceId)
+{
+    // A band-recall preparation and the saved Flex mute are made only while a
+    // profile is assigned; they are checked too, so none is left behind if the
+    // assignment goes first.
+    const SliceModel* slice = m_radioModel.slice(sliceId);
+    const bool held =
+        (m_kiwiSdrManager && !m_kiwiSdrManager->assignedProfileForSlice(sliceId).isEmpty())
+        || m_kiwiSdrBandRecallPreparations.contains(sliceId)
+        || m_kiwiSdrVirtualPreviousMute.contains(sliceId)
+        || (slice && slice->externalReceiveReplacementActive());
+    if (held) {
+        clearKiwiSdrVirtualAntennaForSlice(sliceId);
+    }
+}
+
 void MainWindow::prepareKiwiSdrBandRecallForPan(const QString& panId)
 {
     if (!m_kiwiSdrManager || panId.isEmpty()) {
@@ -1104,19 +1120,17 @@ SliceModel* MainWindow::kiwiSdrDisplaySliceForPan(const QString& panId) const
         }
     }
 
-    // diversity_index is the partner's slice index, not an order (#7448), so
-    // prefer the diversity parent and fall back to candidate order.
-    SliceModel* diversityParent = nullptr;
+    // A diversity parent on this pan has already returned above, so any
+    // diversity candidate left here is a child. diversity_index is the
+    // partner's slice index, not an order (#7448), so it does not rank them:
+    // prefer a non-diversity slice, else candidate order.
     for (SliceModel* slice : candidates) {
         if (!slice->diversity()) {
             return slice;
         }
-        if (!diversityParent && slice->isDiversityParent()) {
-            diversityParent = slice;
-        }
     }
 
-    return diversityParent ? diversityParent : candidates.first();
+    return candidates.first();
 }
 
 QString MainWindow::kiwiSdrProfileForPan(const QString& panId) const

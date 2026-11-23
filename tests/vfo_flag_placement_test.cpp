@@ -157,10 +157,9 @@ int main()
     report("lock-left geometry stays left at left edge",
            lockedAtLeftEdge.rect.x() == -190 && lockedAtLeftEdge.onLeft);
 
-    // FLEX-8600 capture (#7448): parent A is slice 0 with diversity_index=3,
-    // child D is slice 3 with diversity_index=0. The parent must still sort
-    // first, because the index is a partner pointer, not an order.
-    report("diversity parent orders before child (captured indexes)",
+    // The index can no longer be passed in, so the old bug (sorting by
+    // diversity_index, FLEX-8600 capture A=3/D=0 on #7448) can't come back.
+    report("diversity parent slice 0 orders before child slice 3",
            VfoWidget::diversityPairOrderKey(true, false, 0)
                < VfoWidget::diversityPairOrderKey(false, true, 3));
     report("diversity parent orders before lower-id child",
@@ -202,6 +201,57 @@ int main()
         report("diversity metadata-absent pair still splits opposite",
                VfoWidget::diversityPairFlagDir(loFirst ? 0 : 1)
                    != VfoWidget::diversityPairFlagDir(loFirst ? 1 : 0));
+    }
+
+    // #7215: RTTY's default side never replaces a pair lock. Compose the
+    // passes in SpectrumWidget's order (diversity, split, then the RTTY
+    // default): a diversity pair in RTTY keeps opposite sides; a lone RTTY
+    // flag still goes right.
+    {
+        const VfoWidget::FlagDir parent = VfoWidget::rttyFlagDir(
+            true, VfoWidget::diversityPairFlagDir(0));
+        const VfoWidget::FlagDir child = VfoWidget::rttyFlagDir(
+            true, VfoWidget::diversityPairFlagDir(1));
+        expectDir("RTTY keeps the diversity parent locked right",
+                  parent, VfoWidget::LockRight);
+        expectDir("RTTY keeps the diversity child locked left",
+                  child, VfoWidget::LockLeft);
+        report("RTTY diversity pair flags land on opposite sides",
+               VfoWidget::placementForMarker(500, 3, 200, 80, 1000, parent, false).onLeft
+                   != VfoWidget::placementForMarker(500, 3, 200, 80, 1000, child, false).onLeft);
+        expectDir("RTTY keeps a split pair's left lock",
+                  VfoWidget::rttyFlagDir(true, VfoWidget::LockLeft),
+                  VfoWidget::LockLeft);
+        expectDir("a lone RTTY flag still goes right",
+                  VfoWidget::rttyFlagDir(false, VfoWidget::Auto),
+                  VfoWidget::ForceRight);
+    }
+
+    // #7215: an RTTY flag anchors on the passband edge on its own side, so
+    // both flags of a diversity pair sit outside the passband: the parent
+    // starts past the high edge, the child ends before the low edge.
+    {
+        const int lowEdgeX = 400;
+        const int highEdgeX = 460;
+        const int parentX = VfoWidget::rttyFlagAnchorX(lowEdgeX, highEdgeX,
+                                                       VfoWidget::LockRight);
+        const int childX = VfoWidget::rttyFlagAnchorX(lowEdgeX, highEdgeX,
+                                                      VfoWidget::LockLeft);
+        report("a right-side RTTY flag anchors 4 px past the high edge",
+               parentX == highEdgeX + 4);
+        report("a left-locked RTTY flag anchors 4 px before the low edge",
+               childX == lowEdgeX - 4);
+        const auto parentRect = VfoWidget::placementForMarker(
+            parentX, 3, 200, 80, 1000, VfoWidget::LockRight, false).rect;
+        const auto childRect = VfoWidget::placementForMarker(
+            childX, 3, 200, 80, 1000, VfoWidget::LockLeft, false).rect;
+        report("RTTY diversity flags do not overlap",
+               !parentRect.intersects(childRect));
+        report("neither RTTY diversity flag covers the passband",
+               parentRect.left() > highEdgeX && childRect.right() < lowEdgeX);
+        report("a lone right-side RTTY flag keeps its old anchor",
+               VfoWidget::rttyFlagAnchorX(lowEdgeX, highEdgeX, VfoWidget::ForceRight)
+                   == highEdgeX + 4);
     }
 
     std::printf("%s\n", g_failures == 0 ? "All tests passed." : "Test failures.");
